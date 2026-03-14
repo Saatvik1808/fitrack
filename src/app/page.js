@@ -11,6 +11,7 @@ export default function EntrancePage() {
   
   // States for animation sequencing
   const [showButton, setShowButton] = useState(false);
+  const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
 
   useEffect(() => {
     if (!loading && user) {
@@ -19,10 +20,10 @@ export default function EntrancePage() {
   }, [user, loading, router]);
 
   useEffect(() => {
-    // Show login button after splash animation completes (~3 seconds)
+    // Show login button after splash animation completes (~2.5 seconds)
     const timer = setTimeout(() => {
       setShowButton(true);
-    }, 2800);
+    }, 2500);
     return () => clearTimeout(timer);
   }, []);
 
@@ -34,195 +35,173 @@ export default function EntrancePage() {
     }
   };
 
+  // Subtle parallax effect for desktop
+  const handleMouseMove = (e) => {
+    if (window.innerWidth > 768) {
+      setMousePos({
+        x: (e.clientX / window.innerWidth - 0.5) * 20,
+        y: (e.clientY / window.innerHeight - 0.5) * 20,
+      });
+    }
+  };
+
   // If already logged in, show nothing while redirecting
   if (user && !loading) return null;
 
   return (
-    <div style={{
-      position: 'fixed',
-      inset: 0,
-      backgroundColor: '#050508',
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      overflow: 'hidden',
-    }}>
-      {/* Ambient Glows */}
+    <div 
+      onMouseMove={handleMouseMove}
+      style={{
+        position: 'fixed',
+        inset: 0,
+        backgroundColor: '#050508',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        overflow: 'hidden',
+        perspective: '1000px'
+      }}
+    >
+      {/* High-Performance Moving Gradients Backdrop */}
       <motion.div
-         initial={{ opacity: 0, scale: 0.8 }}
-         animate={{ opacity: 0.6, scale: 1 }}
-         transition={{ duration: 2, ease: 'easeOut' }}
+         initial={{ opacity: 0, scale: 1.1 }}
+         animate={{ opacity: 1, scale: 1 }}
+         transition={{ duration: 1.5, ease: 'easeOut' }}
          style={{
            position: 'absolute',
-           top: '10%',
-           left: '-10%',
-           width: '80vw',
-           height: '80vw',
-           background: 'radial-gradient(circle, rgba(11,43,107,0.5) 0%, rgba(0,0,0,0) 70%)',
-           borderRadius: '50%',
-           filter: 'blur(50px)',
-           pointerEvents: 'none'
-         }}
-      />
-      <motion.div
-         initial={{ opacity: 0, scale: 0.8 }}
-         animate={{ opacity: 0.5, scale: 1 }}
-         transition={{ duration: 2, ease: 'easeOut', delay: 0.2 }}
-         style={{
-           position: 'absolute',
-           bottom: '10%',
-           right: '-10%',
-           width: '80vw',
-           height: '80vw',
-           background: 'radial-gradient(circle, rgba(255,139,45,0.4) 0%, rgba(0,0,0,0) 70%)',
-           borderRadius: '50%',
-           filter: 'blur(50px)',
-           pointerEvents: 'none'
+           inset: -100, // Oversize to allow panning
+           background: `
+             radial-gradient(circle at 20% 30%, rgba(30, 79, 175, 0.4) 0%, transparent 40%),
+             radial-gradient(circle at 80% 70%, rgba(217, 73, 0, 0.3) 0%, transparent 40%),
+             radial-gradient(circle at 50% 50%, rgba(11, 43, 107, 0.5) 0%, transparent 60%)
+           `,
+           transform: `translate3d(${mousePos.x}px, ${mousePos.y}px, 0)`,
+           transition: 'transform 0.1s cubic-bezier(0.2, 0.8, 0.2, 1)',
+           filter: 'blur(40px)', 
+           zIndex: 0
          }}
       />
 
-      {/* Fluid Backgrounds using SVG Clip Path */}
-      <div style={{ position: 'absolute', inset: 0, pointerEvents: 'none' }}>
-        <svg
-          width="100%"
-          height="100%"
-          preserveAspectRatio="none"
-          style={{ position: 'absolute', inset: 0 }}
-        >
-          <defs>
-            <linearGradient id="blueGrad" x1="0%" y1="0%" x2="0%" y2="100%">
-              <stop offset="0%" stopColor="#0B2B6B" />
-              <stop offset="100%" stopColor="#1E4FAF" />
-            </linearGradient>
-            <linearGradient id="orangeGrad" x1="0%" y1="0%" x2="0%" y2="100%">
-              <stop offset="0%" stopColor="#FF8B2D" />
-              <stop offset="100%" stopColor="#D94900" />
-            </linearGradient>
-
-            {/* Organic Liquid Filter using Perlin Noise */}
-            <filter id="liquidNoise">
-              <feTurbulence type="fractalNoise" baseFrequency="0.015 0.02" numOctaves="3" result="noise">
-                <animate attributeName="baseFrequency" values="0.015 0.02; 0.025 0.04; 0.015 0.02" dur="5s" repeatCount="indefinite" />
-              </feTurbulence>
-              <feDisplacementMap in="SourceGraphic" in2="noise" scale="50" xChannelSelector="R" yChannelSelector="G" />
-            </filter>
-
-            <clipPath id="splitClip" clipPathUnits="objectBoundingBox">
-              <motion.rect
-                x="-1"
-                y="-1"
-                width="3"
-                height="3"
-                initial={{ rotate: -35, y: -2 }}
-                animate={{
-                  rotate: [ -35, 180 ],
-                  y: [ -2, 0.5 ]
-                }}
-                transition={{
-                  duration: 3.2,
-                  ease: [0.16, 1, 0.3, 1] // Super snappy dramatic expoOut
-                }}
-                style={{ transformOrigin: '0.5 0.5' }}
-              />
-            </clipPath>
-          </defs>
-
-          {/* Base Bottom Layer: Orange */}
-          <rect width="100%" height="100%" fill="url(#orangeGrad)" />
-          
-          {/* Top Layer: Blue, clipped by the rotating rect and distorted to look like liquid */}
-          <rect
-            width="120%"
-            height="120%"
-            x="-10%"
-            y="-10%"
-            fill="url(#blueGrad)"
-            clipPath="url(#splitClip)"
-            filter="url(#liquidNoise)"
-          />
-        </svg>
+      {/* Abstract Animated Geometry (Replaces heavy SVG) */}
+      <div style={{ position: 'absolute', inset: 0, pointerEvents: 'none', zIndex: 1, overflow: 'hidden' }}>
+        <motion.div
+           initial={{ y: '100vh', opacity: 0, rotate: -10 }}
+           animate={{ y: '-20vh', opacity: [0, 1, 0], rotate: 10 }}
+           transition={{ duration: 4, ease: 'easeInOut', repeat: Infinity, repeatDelay: 1 }}
+           style={{
+             position: 'absolute', left: '10%', width: 200, height: 600,
+             background: 'linear-gradient(180deg, rgba(30,79,175,0) 0%, rgba(30,79,175,0.1) 50%, rgba(30,79,175,0) 100%)',
+             transformOrigin: 'center', filter: 'blur(20px)', borderRadius: '100%'
+           }}
+        />
+        <motion.div
+           initial={{ y: '-100vh', opacity: 0, rotate: 10 }}
+           animate={{ y: '20vh', opacity: [0, 0.8, 0], rotate: -10 }}
+           transition={{ duration: 5, delay: 1, ease: 'easeInOut', repeat: Infinity, repeatDelay: 2 }}
+           style={{
+             position: 'absolute', right: '15%', width: 300, height: 800,
+             background: 'linear-gradient(180deg, rgba(217,73,0,0) 0%, rgba(217,73,0,0.1) 50%, rgba(217,73,0,0) 100%)',
+             transformOrigin: 'center', filter: 'blur(30px)', borderRadius: '100%'
+           }}
+        />
       </div>
 
-      {/* Rotating Divider Line */}
-      <motion.div
-        initial={{ rotate: -35, scaleY: 0, opacity: 0 }}
-        animate={{ rotate: 180, scaleY: [0, 1.2, 1], opacity: [0, 1, 1, showButton ? 0 : 1] }}
-        transition={{
-            rotate: { duration: 3.2, ease: [0.16, 1, 0.3, 1] },
-            scaleY: { duration: 0.8, ease: 'easeOut' },
-            opacity: { times: [0, 0.1, 0.8, 1], duration: 3.2 }
-        }}
-        style={{
-          position: 'absolute',
-          width: 2,
-          height: '150vh',
-          backgroundColor: '#ffffff',
-          boxShadow: '0 0 12px rgba(255,255,255,0.8), 0 0 24px rgba(255,255,255,0.4)',
-          transformOrigin: 'center center',
-          zIndex: 2,
-        }}
-      />
-
       {/* Central Content (Logo + Login) */}
-      <div style={{ position: 'relative', zIndex: 10, display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+      <div style={{ position: 'relative', zIndex: 10, display: 'flex', flexDirection: 'column', alignItems: 'center', width: '100%', padding: '0 20px' }}>
+        
+        {/* FitTrack Logo Intro */}
         <motion.div
-           initial={{ opacity: 0, scale: 0.9, y: 0, filter: 'blur(8px)' }}
+           initial={{ opacity: 0, scale: 0.85, y: 30, letterSpacing: '4px' }}
            animate={{ 
              opacity: 1, 
              scale: 1, 
-             y: showButton ? -40 : 0, // Slide up slightly when button appears
-             filter: 'blur(0px)'
+             y: showButton ? -40 : 0,
+             letterSpacing: '-1.5px'
            }}
            transition={{ 
-             opacity: { duration: 1.2, delay: 0.3, ease: "easeOut" },
-             scale: { duration: 2, delay: 0.3, ease: [0.16, 1, 0.3, 1] },
-             filter: { duration: 1.2, delay: 0.3, ease: "easeOut" },
-             y: { duration: 0.8, ease: [0.25, 1, 0.5, 1] }
+             opacity: { duration: 1.2, ease: "easeOut" },
+             scale: { duration: 1.5, ease: [0.16, 1, 0.3, 1] },
+             y: { duration: 0.8, delay: showButton ? 0 : 0, ease: [0.25, 1, 0.5, 1] },
+             letterSpacing: { duration: 1.5, ease: [0.16, 1, 0.3, 1] }
            }}
            style={{
+             position: 'relative',
              fontFamily: '-apple-system, BlinkMacSystemFont, "SF Pro Display", "Inter", sans-serif',
-             fontSize: '3.5rem',
+             fontSize: 'clamp(3rem, 10vw, 4.5rem)', // Responsive font size
              fontWeight: 800,
-             letterSpacing: '-0.04em',
              color: '#ffffff',
              whiteSpace: 'nowrap',
-             textShadow: '0 4px 24px rgba(0,0,0,0.5)',
+             textAlign: 'center',
+             textShadow: '0 10px 30px rgba(0,0,0,0.8)',
              marginBottom: 20
            }}
         >
           FitTrack
+          {/* Subtle logo shine sweep */}
+          <motion.div
+             initial={{ left: '-100%' }}
+             animate={{ left: '200%' }}
+             transition={{ duration: 2.5, ease: "easeInOut", delay: 1 }}
+             style={{
+               position: 'absolute',
+               top: 0, left: 0, width: '50%', height: '100%',
+               background: 'linear-gradient(90deg, transparent, rgba(255,255,255,0.4), transparent)',
+               transform: 'skewX(-20deg)',
+               WebkitBackgroundClip: 'text',
+               color: 'transparent',
+               pointerEvents: 'none'
+             }}
+          />
         </motion.div>
 
         <AnimatePresence>
           {showButton && (
             <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.8, ease: "easeOut" }}
+              initial={{ opacity: 0, y: 20, scale: 0.95 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
               style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', width: '100%', maxWidth: 320 }}
             >
               <button
                 onClick={handleLogin}
                 disabled={loading}
                 style={{
-                  background: 'rgba(255, 255, 255, 0.1)',
+                  background: 'rgba(255, 255, 255, 0.05)',
                   backdropFilter: 'blur(20px)',
                   WebkitBackdropFilter: 'blur(20px)',
-                  border: '1px solid rgba(255, 255, 255, 0.2)',
+                  border: '1px solid rgba(255, 255, 255, 0.1)',
                   color: '#fff',
-                  borderRadius: 16,
+                  borderRadius: 100, // Pill shaped button for modern feel
                   padding: '16px 32px',
                   fontSize: 16,
                   fontWeight: 600,
                   cursor: loading ? 'wait' : 'pointer',
                   fontFamily: 'inherit',
                   width: '100%',
-                  boxShadow: '0 8px 32px rgba(0,0,0,0.3)',
+                  boxShadow: '0 8px 32px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.1)',
                   transition: 'all 0.2s ease',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
                   gap: 12
+                }}
+                onMouseOver={(e) => {
+                  if (!loading) {
+                    e.currentTarget.style.background = 'rgba(255, 255, 255, 0.1)';
+                    e.currentTarget.style.transform = 'translateY(-2px)';
+                  }
+                }}
+                onMouseOut={(e) => {
+                  if (!loading) {
+                    e.currentTarget.style.background = 'rgba(255, 255, 255, 0.05)';
+                    e.currentTarget.style.transform = 'translateY(0)';
+                  }
+                }}
+                onMouseDown={(e) => {
+                  if (!loading) e.currentTarget.style.transform = 'translateY(1px)';
+                }}
+                onMouseUp={(e) => {
+                  if (!loading) e.currentTarget.style.transform = 'translateY(-2px)';
                 }}
               >
                 {loading ? (
@@ -245,13 +224,17 @@ export default function EntrancePage() {
                   </>
                 )}
               </button>
+              
               <div style={{ 
-                fontSize: 12, 
-                color: 'rgba(255,255,255,0.6)', 
-                marginTop: 20,
-                textAlign: 'center' 
+                fontSize: 13, 
+                color: 'rgba(255,255,255,0.5)', 
+                marginTop: 24,
+                textAlign: 'center',
+                lineHeight: 1.5,
+                fontWeight: 500
               }}>
-                By continuing, you sync your isolated tracking data to the cloud.
+                Secure cloud sync <br/>
+                <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.3)' }}>Powered by Firebase</span>
               </div>
             </motion.div>
           )}
