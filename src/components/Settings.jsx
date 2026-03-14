@@ -1,9 +1,10 @@
 import React, { useState } from 'react'
-import { Save, Key, User, Target, Trash2, AlertTriangle } from 'lucide-react'
+import { Save, Key, User, Target, Trash2, AlertTriangle, Palette } from 'lucide-react'
 import { Card, Btn, InputRow, SectionTitle, Divider } from './UI.jsx'
 import { calcBMI, bmiCategory } from '../utils/calculations.js'
 
-export default function Settings({ profile, setProfile }) {
+
+export default function Settings({ profile, setProfile, theme = 'dark', setTheme = () => {} }) {
   const [form, setForm] = useState({ ...profile })
   const [saved, setSaved] = useState(false)
   const [showKey, setShowKey] = useState(false)
@@ -88,6 +89,45 @@ export default function Settings({ profile, setProfile }) {
         </div>
         <div style={{ fontSize: 11, color: 'var(--text3)', background: 'var(--bg3)', borderRadius: 8, padding: 10 }}>
           💡 Based on your coaching plan: 1,650 kcal/day · 163g protein · 146g carbs · 47g fat
+        </div>
+      </Card>
+
+      {/* Appearance */}
+      <Card style={{ marginBottom: 14 }}>
+        <SectionTitle>
+          <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+            <Palette size={15} /> Appearance
+          </span>
+        </SectionTitle>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 10 }}>
+          {[
+            { id: 'dark',   emoji: '🌙', label: 'Dark',   sub: 'Default' },
+            { id: 'light',  emoji: '☀️', label: 'Light',  sub: 'Bright' },
+            { id: 'system', emoji: '🖥', label: 'System', sub: 'Auto' },
+          ].map(opt => (
+            <button
+              key={opt.id}
+              onClick={() => setTheme(opt.id)}
+              style={{
+                padding: '14px 10px',
+                borderRadius: 12,
+                border: theme === opt.id ? '2px solid var(--accent2)' : '2px solid var(--border)',
+                background: theme === opt.id ? 'var(--accent)18' : 'var(--bg3)',
+                cursor: 'pointer',
+                fontFamily: 'inherit',
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                gap: 5,
+                transition: 'all 0.18s ease',
+                boxShadow: theme === opt.id ? '0 0 0 3px var(--accent)22' : 'none',
+              }}
+            >
+              <span style={{ fontSize: 20 }}>{opt.emoji}</span>
+              <span style={{ fontSize: 13, fontWeight: 600, color: theme === opt.id ? 'var(--accent2)' : 'var(--text)' }}>{opt.label}</span>
+              <span style={{ fontSize: 10, color: 'var(--text3)' }}>{opt.sub}</span>
+            </button>
+          ))}
         </div>
       </Card>
 

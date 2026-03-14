@@ -7,7 +7,9 @@ import RunningTracker from './components/RunningTracker.jsx'
 import AIFoodAnalyzer from './components/AIFoodAnalyzer.jsx'
 import History from './components/History.jsx'
 import Settings from './components/Settings.jsx'
+import AppDownload from './components/AppDownload.jsx'
 import { useProfile, useDailyLogs, useWorkouts, useRuns } from './hooks/useStorage.js'
+import { useTheme } from './hooks/useTheme.js'
 
 export default function App() {
   const [page, setPage] = useState('dashboard')
@@ -15,6 +17,7 @@ export default function App() {
   const { logs, setLog, getLog, getTodayLog, today } = useDailyLogs()
   const { workouts, addWorkout, deleteWorkout } = useWorkouts()
   const { runs, addRun, deleteRun } = useRuns()
+  const [theme, setTheme] = useTheme()
 
   function handleAddFoodToLog(nutrition) {
     const todayLog = getTodayLog()
@@ -34,7 +37,8 @@ export default function App() {
     running: <RunningTracker runs={runs} addRun={addRun} deleteRun={deleteRun} profile={profile} />,
     ai: <AIFoodAnalyzer onAddToLog={handleAddFoodToLog} apiKey={profile.geminiApiKey} />,
     history: <History logs={logs} workouts={workouts} runs={runs} />,
-    settings: <Settings profile={profile} setProfile={setProfile} />,
+    settings: <Settings profile={profile} setProfile={setProfile} theme={theme} setTheme={setTheme} />,
+    download: <AppDownload />,
   }
 
   return (

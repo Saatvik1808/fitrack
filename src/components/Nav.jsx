@@ -1,5 +1,5 @@
 import React from 'react'
-import { LayoutDashboard, ClipboardList, Dumbbell, Activity, Bot, History, Settings } from 'lucide-react'
+import { LayoutDashboard, ClipboardList, Dumbbell, Activity, Bot, History, Settings, Download } from 'lucide-react'
 
 const NAV = [
   { id: 'dashboard', icon: LayoutDashboard, label: 'Dashboard' },
@@ -9,6 +9,7 @@ const NAV = [
   { id: 'ai', icon: Bot, label: 'AI Food' },
   { id: 'history', icon: History, label: 'History' },
   { id: 'settings', icon: Settings, label: 'Settings' },
+  { id: 'download', icon: Download, label: 'Download' },
 ]
 
 export default function Nav({ active, onChange }) {
