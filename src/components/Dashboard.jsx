@@ -5,7 +5,7 @@ import {
   BarElement, Title, Tooltip, Legend, Filler, ArcElement,
 } from 'chart.js'
 import { Line, Bar, Doughnut } from 'react-chartjs-2'
-import { Target, Flame, Dumbbell, Activity, Zap, Trophy, Moon } from 'lucide-react'
+import { Target, Flame, Dumbbell, Activity, Zap, Trophy, Moon, Info, Calendar } from 'lucide-react'
 import { Card, StatCard, SectionTitle, ProgressBar, Badge, Grid, MotionCard, Modal } from './UI.jsx'
 import {
   calcBMI, bmiCategory, calcGoalProgress, getWeekDates, getLast30Days,
@@ -265,7 +265,123 @@ export default function Dashboard({ logs, workouts, runs, profile }) {
           </div>
         )}
 
-        {['bmi', 'goal', 'streak', 'protein', 'running', 'workouts'].includes(selectedAnalysis) && (
+        {selectedAnalysis === 'bmi' && (
+          <div>
+            <p style={{ color: 'var(--text3)', fontSize: 13, marginBottom: 16 }}>
+              Body Mass Index (BMI) evaluates your weight relative to your height. It's a general indicator of health, though it doesn't account for muscle mass vs. fat.
+            </p>
+            <div style={{ background: 'var(--bg2)', padding: '16px', borderRadius: 12, marginBottom: 20 }}>
+              <div style={{ display: 'flex', alignItems: 'flex-end', gap: 12, marginBottom: 12 }}>
+                <div style={{ fontSize: 36, fontWeight: 800, color: bmiCat.color, lineHeight: 1 }}>{bmi}</div>
+                <div style={{ fontSize: 16, fontWeight: 600, color: bmiCat.color, marginBottom: 4 }}>{bmiCat.label}</div>
+              </div>
+              <div style={{ height: 12, borderRadius: 100, display: 'flex', overflow: 'hidden', background: 'var(--bg4)', width: '100%', position: 'relative' }}>
+                <div style={{ width: '25%', background: '#3b82f6' }} title="Underweight (< 18.5)" />
+                <div style={{ width: '25%', background: '#22c55e' }} title="Normal (18.5 - 24.9)" />
+                <div style={{ width: '25%', background: '#f97316' }} title="Overweight (25 - 29.9)" />
+                <div style={{ width: '25%', background: '#ef4444' }} title="Obese (30+)" />
+                {bmi > 0 && (
+                  <div style={{
+                    position: 'absolute',
+                    // Map BMI visually across 4 quadrants: (0-18.5), (18.5-25), (25-30), (30-40)
+                    left: `${Math.min(95, Math.max(5, bmi < 18.5 ? (bmi/18.5)*25 : bmi < 25 ? 25 + ((bmi-18.5)/6.5)*25 : bmi < 30 ? 50 + ((bmi-25)/5)*25 : 75 + ((bmi-30)/10)*25))}%`,
+                    top: -2, height: 16, width: 4, background: '#fff', borderRadius: 4, transform: 'translateX(-50%)',
+                    boxShadow: '0 0 4px rgba(0,0,0,0.5)'
+                  }} />
+                )}
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 10, color: 'var(--text3)', marginTop: 8 }}>
+                <span>18.5</span>
+                <span>25.0</span>
+                <span>30.0</span>
+              </div>
+            </div>
+            
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+              {[
+                { label: 'Underweight', range: '< 18.5', color: '#3b82f6', desc: 'May indicate nutritional deficiency.' },
+                { label: 'Normal weight', range: '18.5 - 24.9', color: '#22c55e', desc: 'Associated with lowest health risks.' },
+                { label: 'Overweight', range: '25.0 - 29.9', color: '#f97316', desc: 'Slightly elevated health risks.' },
+                { label: 'Obese', range: '30.0+', color: '#ef4444', desc: 'Increased risk of chronic conditions.' },
+              ].map(cat => (
+                <div key={cat.label} style={{ display: 'flex', gap: 12, alignItems: 'center', opacity: bmiCat.label.includes(cat.label.split(' ')[0]) ? 1 : 0.4, transition: 'opacity 0.2s', background: 'var(--bg3)', padding: 10, borderRadius: 8 }}>
+                   <div style={{ width: 12, height: 12, borderRadius: '50%', background: cat.color, flexShrink: 0 }} />
+                   <div>
+                     <div style={{ fontSize: 13, fontWeight: 600 }}>{cat.label} <span style={{ color: 'var(--text3)', fontWeight: 400, marginLeft: 6 }}>{cat.range}</span></div>
+                     <div style={{ fontSize: 11, color: 'var(--text2)', marginTop: 2 }}>{cat.desc}</div>
+                   </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {selectedAnalysis === 'streak' && (
+          <div>
+            <p style={{ color: 'var(--text3)', fontSize: 13, marginBottom: 16 }}>Your 90-day activity matrix. Any logged metric—a workout, nutrition, or body measurement—lights up a day.</p>
+            
+            <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginBottom: 20 }}>
+              <div style={{ background: 'var(--orange)18', padding: 14, borderRadius: 12, color: 'var(--orange)' }}>
+                <Flame size={32} />
+              </div>
+              <div>
+                <div style={{ fontSize: 12, color: 'var(--text2)', textTransform: 'uppercase', letterSpacing: 1 }}>Current Streak</div>
+                <div style={{ fontSize: 32, fontWeight: 800 }}>{streak} <span style={{ fontSize: 16, color: 'var(--text3)', fontWeight: 500 }}>days 🔥</span></div>
+              </div>
+            </div>
+
+            <div style={{ 
+              background: 'var(--bg2)', padding: 16, borderRadius: 12, 
+              display: 'flex', flexDirection: 'column', gap: 4,
+              overflowX: 'auto', WebkitOverflowScrolling: 'touch'
+            }}>
+              {/* Generate 7 rows (days of week), 13 cols (~90 days) matrix */}
+              {[0,1,2,3,4,5,6].map(dayIndex => (
+                <div key={dayIndex} style={{ display: 'flex', gap: 4, alignItems: 'center' }}>
+                  <div style={{ fontSize: 9, color: 'var(--text3)', width: 22, textAlign: 'right', paddingRight: 4 }}>
+                    {dayIndex === 1 ? 'Mon' : dayIndex === 3 ? 'Wed' : dayIndex === 5 ? 'Fri' : ''}
+                  </div>
+                  {Array.from({length: 13}).map((_, colIndex) => {
+                    // Calculate date going backwards from today
+                    const daysAgo = (12 - colIndex) * 7 + (6 - dayIndex) - (6 - new Date().getDay());
+                    let opacity = 0;
+                    if (daysAgo >= 0 && daysAgo < 90) {
+                       const d = new Date()
+                       d.setDate(d.getDate() - daysAgo)
+                       const key = formatLocalYYYYMMDD(d)
+                       const log = logs[key]
+                       if (log && Object.keys(log).length > 0) opacity = 1;
+                       else opacity = 0.08;
+                    } else if (daysAgo < 0) {
+                      opacity = 0; // Future
+                    }
+
+                    return (
+                      <div 
+                        key={colIndex} 
+                        style={{ 
+                          width: 14, height: 14, borderRadius: 3, 
+                          background: opacity === 1 ? 'var(--orange)' : 'var(--text3)',
+                          opacity: opacity,
+                          transform: opacity === 1 ? 'scale(1.05)' : 'scale(1)',
+                          transition: 'all 0.2s ease',
+                          boxShadow: opacity === 1 ? '0 2px 4px rgba(249,115,22,0.3)' : 'none'
+                        }}
+                        title={daysAgo >= 0 ? `${daysAgo} days ago` : 'Future'}
+                      />
+                    )
+                  })}
+                </div>
+              ))}
+              <div style={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center', gap: 6, marginTop: 8, fontSize: 10, color: 'var(--text3)' }}>
+                Less <div style={{width:10, height:10, borderRadius:2, background:'var(--text3)', opacity:0.08}}/> 
+                <div style={{width:10, height:10, borderRadius:2, background:'var(--orange)', opacity:1}}/> More
+              </div>
+            </div>
+          </div>
+        )}
+
+        {['goal', 'protein', 'running', 'workouts'].includes(selectedAnalysis) && (
           <div style={{ textAlign: 'center', padding: '2rem 1rem' }}>
             <Activity size={40} color="var(--accent)" style={{ margin: '0 auto 1rem', opacity: 0.5 }} />
             <h3 style={{ fontSize: 18, marginBottom: 8 }}>Analysis generating...</h3>
