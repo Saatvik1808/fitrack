@@ -10,11 +10,7 @@ export default function LoginPage() {
 
   useEffect(() => {
     if (!loading && user) {
-      if (userProfile) {
-        router.push('/dashboard');
-      } else {
-        router.push('/onboarding');
-      }
+      router.push('/dashboard');
     }
   }, [user, userProfile, loading, router]);
 

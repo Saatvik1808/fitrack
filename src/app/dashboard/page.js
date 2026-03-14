@@ -15,9 +15,10 @@ import Settings from '@/components/Settings.jsx'
 import AppDownload from '@/components/AppDownload.jsx'
 import { useProfile, useDailyLogs, useWorkouts, useRuns } from '@/hooks/useStorage.js'
 import { useTheme } from '@/hooks/useTheme.js'
+import { LogOut } from 'lucide-react'
 
 export default function DashboardPage() {
-  const { user, loading } = useAuth()
+  const { user, loading, logout } = useAuth()
   const router = useRouter()
 
   // Redirect to login if not authenticated
@@ -28,10 +29,12 @@ export default function DashboardPage() {
   }, [user, loading, router])
 
   const [page, setPage] = useState('dashboard')
-  const [profile, setProfile] = useProfile()
-  const { logs, setLog, getLog, getTodayLog, today } = useDailyLogs()
-  const { workouts, addWorkout, deleteWorkout } = useWorkouts()
-  const { runs, addRun, deleteRun } = useRuns()
+  
+  // Pass userId and email to hooks for data isolation and migration
+  const [profile, setProfile] = useProfile(user?.uid, user?.email)
+  const { logs, setLog, getLog, getTodayLog, today } = useDailyLogs(user?.uid)
+  const { workouts, addWorkout, deleteWorkout } = useWorkouts(user?.uid)
+  const { runs, addRun, deleteRun } = useRuns(user?.uid)
   const [theme, setTheme] = useTheme()
 
   function handleAddFoodToLog(nutrition) {
@@ -43,6 +46,15 @@ export default function DashboardPage() {
       fat: (Number(todayLog.fat) || 0) + Number(nutrition.fat || 0),
     })
     setPage('log')
+  }
+
+  const handleLogout = async () => {
+    try {
+      await logout()
+      router.push('/')
+    } catch(err) {
+      console.error(err)
+    }
   }
 
   // Show loading while checking auth
@@ -85,8 +97,34 @@ export default function DashboardPage() {
         maxWidth: 768,
         margin: '0 auto',
         minHeight: '100dvh',
-        boxSizing: 'border-box'
+        boxSizing: 'border-box',
+        position: 'relative'
       }}>
+        
+        {/* Logout Button */}
+        <button 
+          onClick={handleLogout}
+          style={{
+            position: 'absolute',
+            top: '1.5rem',
+            right: '1.25rem',
+            display: 'flex',
+            alignItems: 'center',
+            gap: 6,
+            background: 'var(--bg3)',
+            color: 'var(--red)',
+            border: '1px solid var(--border)',
+            padding: '8px 12px',
+            borderRadius: 8,
+            fontSize: 12,
+            fontWeight: 600,
+            cursor: 'pointer',
+            zIndex: 10,
+          }}
+        >
+          <LogOut size={14} /> Sign out
+        </button>
+
         <AnimatePresence mode="wait">
           <motion.div
             key={page}
@@ -94,6 +132,7 @@ export default function DashboardPage() {
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -10 }}
             transition={{ duration: 0.2 }}
+            style={{ paddingTop: 40 }} // Space for logout button
           >
             {pages[page]}
           </motion.div>
