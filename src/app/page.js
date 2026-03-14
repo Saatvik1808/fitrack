@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -14,6 +14,52 @@ export default function EntrancePage() {
   const [exiting, setExiting] = useState(false);
   // Track whether user was already logged in when the page mounted
   const [isReturningUser, setIsReturningUser] = useState(false);
+  const bgRef = useRef(null);
+
+  // Tilt / parallax effect — directly mutates DOM via ref (zero re-renders)
+  useEffect(() => {
+    const el = bgRef.current;
+    if (!el) return;
+    let rafId;
+    let tx = 0, ty = 0;
+
+    // Mobile: gyroscope tilt
+    const handleOrientation = (e) => {
+      // beta = front-back tilt (-180 to 180), gamma = left-right tilt (-90 to 90)
+      const x = Math.max(-25, Math.min(25, e.gamma || 0)); // clamp
+      const y = Math.max(-25, Math.min(25, (e.beta || 0) - 45)); // offset for natural hold angle
+      tx = x * 0.8; // subtle multiplier
+      ty = y * 0.6;
+      cancelAnimationFrame(rafId);
+      rafId = requestAnimationFrame(() => {
+        el.style.transform = `translate3d(${tx}px, ${ty}px, 0)`;
+      });
+    };
+
+    // Desktop: mouse parallax
+    const handleMouse = (e) => {
+      const x = (e.clientX / window.innerWidth - 0.5) * 30;
+      const y = (e.clientY / window.innerHeight - 0.5) * 30;
+      tx = x;
+      ty = y;
+      cancelAnimationFrame(rafId);
+      rafId = requestAnimationFrame(() => {
+        el.style.transform = `translate3d(${tx}px, ${ty}px, 0)`;
+      });
+    };
+
+    // Try to use gyroscope on mobile, fall back to mouse on desktop
+    if (typeof window !== 'undefined' && window.DeviceOrientationEvent) {
+      window.addEventListener('deviceorientation', handleOrientation, { passive: true });
+    }
+    window.addEventListener('mousemove', handleMouse, { passive: true });
+
+    return () => {
+      window.removeEventListener('deviceorientation', handleOrientation);
+      window.removeEventListener('mousemove', handleMouse);
+      cancelAnimationFrame(rafId);
+    };
+  }, []);
 
   useEffect(() => {
     if (!loading && user) {
@@ -61,20 +107,23 @@ export default function EntrancePage() {
         overflow: 'hidden',
       }}
     >
-      {/* Static Gradient Backdrop — no blur filter, no JS animation */}
+      {/* Gradient Backdrop — moves with device tilt / mouse via ref */}
       <motion.div
+         ref={bgRef}
          initial={{ opacity: 0 }}
          animate={{ opacity: 1 }}
          transition={{ duration: 1.5, ease: 'easeOut' }}
          style={{
            position: 'absolute',
-           inset: -50,
+           inset: -60, // extra space for parallax movement
            background: `
              radial-gradient(ellipse at 20% 30%, rgba(30, 79, 175, 0.5) 0%, transparent 50%),
              radial-gradient(ellipse at 80% 70%, rgba(217, 73, 0, 0.35) 0%, transparent 50%),
              radial-gradient(ellipse at 50% 50%, rgba(11, 43, 107, 0.4) 0%, transparent 70%)
            `,
-           zIndex: 0
+           zIndex: 0,
+           willChange: 'transform',
+           transition: 'transform 0.15s ease-out',
          }}
       />
 
