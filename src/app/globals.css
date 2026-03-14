@@ -83,6 +83,43 @@ input[type="file"] {
   padding: 8px;
 }
 
+/* Date & time input fixes for dark themes and mobile */
+input[type="date"],
+input[type="time"],
+input[type="datetime-local"] {
+  -webkit-appearance: none;
+  appearance: none;
+  color-scheme: dark;
+  min-height: 44px; /* Touch-friendly tap target */
+}
+
+.theme-light input[type="date"],
+.theme-light input[type="time"],
+.theme-light input[type="datetime-local"] {
+  color-scheme: light;
+}
+
+/* WebKit calendar icon color fix */
+input[type="date"]::-webkit-calendar-picker-indicator {
+  filter: invert(0.7);
+  cursor: pointer;
+  padding: 4px;
+}
+
+.theme-light input[type="date"]::-webkit-calendar-picker-indicator {
+  filter: none;
+}
+
+select {
+  -webkit-appearance: none;
+  appearance: none;
+  min-height: 44px;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%239090a8' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 12px center;
+  padding-right: 36px;
+}
+
 select option {
   background: var(--bg3);
 }

@@ -1,13 +1,27 @@
-import React from 'react'
+import React, { useEffect, useState } from 'react'
+import { createPortal } from 'react-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import { X } from 'lucide-react'
 
 export function Modal({ isOpen, onClose, title, children }) {
-  return (
+  const [mounted, setMounted] = useState(false)
+  useEffect(() => { setMounted(true) }, [])
+
+  // Prevent body scroll when modal is open
+  useEffect(() => {
+    if (isOpen) {
+      document.body.style.overflow = 'hidden'
+      return () => { document.body.style.overflow = '' }
+    }
+  }, [isOpen])
+
+  if (!mounted) return null
+
+  return createPortal(
     <AnimatePresence>
       {isOpen && (
         <div style={{
-          position: 'fixed', inset: 0, zIndex: 100,
+          position: 'fixed', inset: 0, zIndex: 9999,
           display: 'flex', alignItems: 'flex-end', justifyContent: 'center',
         }}>
           <motion.div
@@ -34,7 +48,7 @@ export function Modal({ isOpen, onClose, title, children }) {
                 <X size={18} />
               </button>
             </div>
-            <div style={{ padding: '0 1.25rem 1.25rem', overflowY: 'auto', maxHeight: 'calc(85vh - 60px)', WebkitOverflowScrolling: 'touch' }}>
+            <div className="modal-scroll-area">
               {children}
             </div>
           </motion.div>
@@ -51,6 +65,12 @@ export function Modal({ isOpen, onClose, title, children }) {
               max-height: 85vh;
               overflow: hidden;
             }
+            .modal-scroll-area {
+              padding: 0 1.25rem 1.25rem;
+              overflow-y: auto;
+              max-height: calc(80vh - 60px);
+              -webkit-overflow-scrolling: touch;
+            }
             @media (min-width: 600px) {
               .modal-content-panel {
                 max-width: 480px;
@@ -62,7 +82,8 @@ export function Modal({ isOpen, onClose, title, children }) {
           `}</style>
         </div>
       )}
-    </AnimatePresence>
+    </AnimatePresence>,
+    document.body
   )
 }
 export function Card({ children, className = '', style = {}, onClick }) {
