@@ -124,7 +124,7 @@ export default function DashboardPage() {
 
   return (
     <div style={{ minHeight: '100dvh', display: 'flex' }}>
-      <Nav active={page} onChange={setPage} />
+      <Nav active={page} onChange={setPage} onLogout={handleLogout} />
 
       {/* Main content */}
       <main style={{
@@ -140,30 +140,6 @@ export default function DashboardPage() {
         position: 'relative'
       }}>
         
-        {/* Logout Button */}
-        <button 
-          onClick={handleLogout}
-          style={{
-            position: 'absolute',
-            top: '1.5rem',
-            right: '1.25rem',
-            display: 'flex',
-            alignItems: 'center',
-            gap: 6,
-            background: 'var(--bg3)',
-            color: 'var(--red)',
-            border: '1px solid var(--border)',
-            padding: '8px 12px',
-            borderRadius: 8,
-            fontSize: 12,
-            fontWeight: 600,
-            cursor: 'pointer',
-            zIndex: 10,
-          }}
-        >
-          <LogOut size={14} /> Sign out
-        </button>
-
         <AnimatePresence mode="wait">
           <motion.div
             key={page}
@@ -171,7 +147,6 @@ export default function DashboardPage() {
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -10 }}
             transition={{ duration: 0.2 }}
-            style={{ paddingTop: 40 }} // Space for logout button
           >
             {pages[page]}
           </motion.div>

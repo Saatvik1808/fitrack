@@ -1,6 +1,6 @@
 import React, { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { LayoutDashboard, ClipboardList, Dumbbell, Activity, Bot, History, Settings, Download, MoreHorizontal, X } from 'lucide-react'
+import { LayoutDashboard, ClipboardList, Dumbbell, Activity, Bot, History, Settings, Download, MoreHorizontal, X, LogOut } from 'lucide-react'
 
 const NAV = [
   { id: 'dashboard', icon: LayoutDashboard, label: 'Dashboard', mobile: true },
@@ -13,7 +13,7 @@ const NAV = [
   { id: 'download', icon: Download, label: 'Download', mobile: false },
 ]
 
-export default function Nav({ active, onChange }) {
+export default function Nav({ active, onChange, onLogout }) {
   const [showMore, setShowMore] = useState(false)
   const mobileNav = NAV.slice(0, 4)
   const moreNav = NAV.slice(4)
@@ -77,6 +77,36 @@ export default function Nav({ active, onChange }) {
             {label}
           </motion.button>
         ))}
+
+        <div style={{ flex: 1 }} />
+        {onLogout && (
+          <motion.button
+            whileHover={{ x: 4, backgroundColor: 'var(--bg3)' }}
+            whileTap={{ scale: 0.98 }}
+            onClick={onLogout}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 10,
+              padding: '10px 12px',
+              borderRadius: 10,
+              marginTop: 'auto',
+              background: 'transparent',
+              color: 'var(--red)',
+              fontSize: 13,
+              fontWeight: 500,
+              fontFamily: 'inherit',
+              cursor: 'pointer',
+              border: 'none',
+              width: '100%',
+              textAlign: 'left',
+              transition: 'background-color 0.15s ease',
+            }}
+          >
+            <LogOut size={16} />
+            Sign out
+          </motion.button>
+        )}
       </nav>
 
       {/* Bottom bar – mobile */}
@@ -167,6 +197,23 @@ export default function Nav({ active, onChange }) {
                 {label}
               </motion.button>
             ))}
+            {onLogout && (
+              <motion.button
+                whileTap={{ scale: 0.95 }}
+                onClick={onLogout}
+                style={{
+                  display: 'flex', alignItems: 'center', gap: 10,
+                  padding: '12px', borderRadius: 12,
+                  background: 'var(--bg3)',
+                  color: 'var(--red)',
+                  border: 'none', fontSize: 13, fontWeight: 500,
+                  textAlign: 'left',
+                }}
+              >
+                <LogOut size={18} />
+                Sign out
+              </motion.button>
+            )}
           </motion.div>
         )}
       </AnimatePresence>
