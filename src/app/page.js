@@ -14,16 +14,22 @@ export default function EntrancePage() {
   const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
 
   useEffect(() => {
+    let timer;
     if (!loading && user) {
-      router.push('/dashboard');
+      // Force a 2 second delay so the entrance animation plays out
+      // even if the user is already authenticated via Firebase cache
+      timer = setTimeout(() => {
+        router.push('/dashboard');
+      }, 2000);
     }
+    return () => clearTimeout(timer);
   }, [user, loading, router]);
 
   useEffect(() => {
-    // Show login button after splash animation completes (~2.5 seconds)
+    // Show login button quickly after text fades in (~1 second)
     const timer = setTimeout(() => {
       setShowButton(true);
-    }, 2500);
+    }, 1200);
     return () => clearTimeout(timer);
   }, []);
 
@@ -45,8 +51,9 @@ export default function EntrancePage() {
     }
   };
 
-  // If already logged in, show nothing while redirecting
-  if (user && !loading) return null;
+  // Do NOT return null here anymore. 
+  // We want the splash rendering to happen for 2 seconds even if they are logged in.
+  // if (user && !loading) return null;
 
   return (
     <div 
