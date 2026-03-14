@@ -58,19 +58,28 @@ function getDefaultProfile(userEmail) {
 }
 
 function load(key, fallback) {
+  if (typeof window === 'undefined') return fallback
   try {
-    const raw = localStorage.getItem(key)
+    const raw = window.localStorage.getItem(key)
     return raw ? JSON.parse(raw) : fallback
   } catch { return fallback }
 }
 
+// Simple in-memory debounce map for Firestore writes
+const dbTimeouts = {}
+
 function save(key, value, userId, collectionName) {
   try { localStorage.setItem(key, JSON.stringify(value)) } catch {}
   
-  // Sync to Firestore in the background if db is available
+  // Sync to Firestore in the background with a 1500ms debounce
   if (userId && db && collectionName) {
-    const docRef = doc(db, 'users', userId, 'data', collectionName)
-    setDoc(docRef, { data: value }, { merge: true }).catch(err => console.error("Firestore sync error:", err))
+    if (dbTimeouts[collectionName]) {
+      clearTimeout(dbTimeouts[collectionName])
+    }
+    dbTimeouts[collectionName] = setTimeout(() => {
+      const docRef = doc(db, 'users', userId, 'data', collectionName)
+      setDoc(docRef, { data: value }, { merge: true }).catch(err => console.error("Firestore sync error:", err))
+    }, 1500)
   }
 }
 
@@ -109,20 +118,19 @@ function migrateIfNeeded(userId, userEmail) {
 }
 
 export function useProfile(userId, userEmail) {
-  // Run migration on mount
+  const fallback = getDefaultProfile(userEmail)
+  const [profile, setProfileState] = useState(fallback)
+  const [isMounted, setIsMounted] = useState(false)
+
+  // Run migration and initial mount load
   useEffect(() => {
+    setIsMounted(true)
     if (userId && userEmail) migrateIfNeeded(userId, userEmail)
-  }, [userId, userEmail])
-
-  const key = userId ? userKeys(userId).PROFILE : BASE_KEYS.PROFILE
-
-  const [profile, setProfileState] = useState(() => load(key, getDefaultProfile(userEmail)))
-
-  // Re-load when userId changes and fetch from DB
-  useEffect(() => {
+    
+    const k = userId ? userKeys(userId).PROFILE : BASE_KEYS.PROFILE
+    setProfileState(load(k, fallback))
+    
     if (userId) {
-      const k = userKeys(userId).PROFILE
-      setProfileState(load(k, getDefaultProfile(userEmail)))
       fetchFromDb(userId, 'PROFILE', k, setProfileState)
     }
   }, [userId, userEmail])
@@ -130,22 +138,24 @@ export function useProfile(userId, userEmail) {
   const setProfile = useCallback((updater) => {
     setProfileState(prev => {
       const next = typeof updater === 'function' ? updater(prev) : { ...prev, ...updater }
-      save(userId ? userKeys(userId).PROFILE : BASE_KEYS.PROFILE, next, userId, 'PROFILE')
+      if (isMounted) save(userId ? userKeys(userId).PROFILE : BASE_KEYS.PROFILE, next, userId, 'PROFILE')
       return next
     })
-  }, [userId])
+  }, [userId, isMounted])
 
   return [profile, setProfile]
 }
 
 export function useDailyLogs(userId) {
-  const key = userId ? userKeys(userId).LOGS : BASE_KEYS.LOGS
-  const [logs, setLogsState] = useState(() => load(key, {}))
+  const [logs, setLogsState] = useState({})
+  const [isMounted, setIsMounted] = useState(false)
 
   useEffect(() => {
+    setIsMounted(true)
+    const k = userId ? userKeys(userId).LOGS : BASE_KEYS.LOGS
+    setLogsState(load(k, {}))
+    
     if (userId) {
-      const k = userKeys(userId).LOGS
-      setLogsState(load(k, {}))
       fetchFromDb(userId, 'LOGS', k, setLogsState)
     }
   }, [userId])
@@ -155,25 +165,26 @@ export function useDailyLogs(userId) {
       const current = prev[date] || {}
       const next = typeof updater === 'function' ? updater(current) : { ...current, ...updater }
       const newLogs = { ...prev, [date]: next }
-      save(userId ? userKeys(userId).LOGS : BASE_KEYS.LOGS, newLogs, userId, 'LOGS')
+      if (isMounted) save(userId ? userKeys(userId).LOGS : BASE_KEYS.LOGS, newLogs, userId, 'LOGS')
       return newLogs
     })
-  }, [userId])
+  }, [userId, isMounted])
 
   const getLog = useCallback((date) => logs[date] || {}, [logs])
   const getTodayLog = useCallback(() => getLog(getToday()), [getLog])
 
-  return { logs, setLog, getLog, getTodayLog, today: getToday() }
+  return { logs, setLog, getLog, getTodayLog, today: getToday(), isMounted }
 }
 
 export function useWorkouts(userId) {
-  const key = userId ? userKeys(userId).WORKOUTS : BASE_KEYS.WORKOUTS
-  const [workouts, setWorkoutsState] = useState(() => load(key, []))
+  const [workouts, setWorkoutsState] = useState([])
+  const [isMounted, setIsMounted] = useState(false)
 
   useEffect(() => {
+    setIsMounted(true)
+    const k = userId ? userKeys(userId).WORKOUTS : BASE_KEYS.WORKOUTS
+    setWorkoutsState(load(k, []))
     if (userId) {
-      const k = userKeys(userId).WORKOUTS
-      setWorkoutsState(load(k, []))
       fetchFromDb(userId, 'WORKOUTS', k, setWorkoutsState)
     }
   }, [userId])
@@ -181,30 +192,31 @@ export function useWorkouts(userId) {
   const addWorkout = useCallback((workout) => {
     setWorkoutsState(prev => {
       const next = [{ ...workout, id: Date.now(), date: workout.date || getToday() }, ...prev]
-      save(userId ? userKeys(userId).WORKOUTS : BASE_KEYS.WORKOUTS, next, userId, 'WORKOUTS')
+      if (isMounted) save(userId ? userKeys(userId).WORKOUTS : BASE_KEYS.WORKOUTS, next, userId, 'WORKOUTS')
       return next
     })
-  }, [userId])
+  }, [userId, isMounted])
 
   const deleteWorkout = useCallback((id) => {
     setWorkoutsState(prev => {
       const next = prev.filter(w => w.id !== id)
-      save(userId ? userKeys(userId).WORKOUTS : BASE_KEYS.WORKOUTS, next, userId, 'WORKOUTS')
+      if (isMounted) save(userId ? userKeys(userId).WORKOUTS : BASE_KEYS.WORKOUTS, next, userId, 'WORKOUTS')
       return next
     })
-  }, [userId])
+  }, [userId, isMounted])
 
-  return { workouts, addWorkout, deleteWorkout }
+  return { workouts, addWorkout, deleteWorkout, isMounted }
 }
 
 export function useRuns(userId) {
-  const key = userId ? userKeys(userId).RUNS : BASE_KEYS.RUNS
-  const [runs, setRunsState] = useState(() => load(key, []))
+  const [runs, setRunsState] = useState([])
+  const [isMounted, setIsMounted] = useState(false)
 
   useEffect(() => {
+    setIsMounted(true)
+    const k = userId ? userKeys(userId).RUNS : BASE_KEYS.RUNS
+    setRunsState(load(k, []))
     if (userId) {
-      const k = userKeys(userId).RUNS
-      setRunsState(load(k, []))
       fetchFromDb(userId, 'RUNS', k, setRunsState)
     }
   }, [userId])
@@ -212,20 +224,20 @@ export function useRuns(userId) {
   const addRun = useCallback((run) => {
     setRunsState(prev => {
       const next = [{ ...run, id: Date.now(), date: run.date || getToday() }, ...prev]
-      save(userId ? userKeys(userId).RUNS : BASE_KEYS.RUNS, next, userId, 'RUNS')
+      if (isMounted) save(userId ? userKeys(userId).RUNS : BASE_KEYS.RUNS, next, userId, 'RUNS')
       return next
     })
-  }, [userId])
+  }, [userId, isMounted])
 
   const deleteRun = useCallback((id) => {
     setRunsState(prev => {
       const next = prev.filter(r => r.id !== id)
-      save(userId ? userKeys(userId).RUNS : BASE_KEYS.RUNS, next, userId, 'RUNS')
+      if (isMounted) save(userId ? userKeys(userId).RUNS : BASE_KEYS.RUNS, next, userId, 'RUNS')
       return next
     })
-  }, [userId])
+  }, [userId, isMounted])
 
-  return { runs, addRun, deleteRun }
+  return { runs, addRun, deleteRun, isMounted }
 }
 
 export function exportData(userId) {
