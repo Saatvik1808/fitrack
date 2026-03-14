@@ -2,7 +2,7 @@ import React, { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Plus, Trash2, ChevronDown, ChevronUp, Dumbbell, Clock } from 'lucide-react'
 import { Card, Btn, InputRow, SectionTitle, EmptyState, Badge, Grid, MotionCard } from './UI.jsx'
-import { calcWorkoutVolume, formatDate } from '../utils/calculations.js'
+import { calcWorkoutVolume, formatDate, formatLocalYYYYMMDD } from '../utils/calculations.js'
 
 const COMMON_EXERCISES = [
   'Bench Press', 'Squat', 'Deadlift', 'Pull-ups', 'Barbell Row',
@@ -114,7 +114,7 @@ function ExerciseCard({ exercise, onChange, onDelete }) {
 }
 
 export default function WorkoutLogger({ workouts, addWorkout, deleteWorkout }) {
-  const today = new Date().toISOString().split('T')[0]
+  const today = formatLocalYYYYMMDD()
   const [form, setForm] = useState({
     name: '',
     date: today,

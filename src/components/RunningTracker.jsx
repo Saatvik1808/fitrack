@@ -3,7 +3,7 @@ import { motion } from 'framer-motion'
 import { Plus, Trash2, Activity } from 'lucide-react'
 import { Line } from 'react-chartjs-2'
 import { Card, Btn, InputRow, SectionTitle, EmptyState, Badge, StatCard, Grid, MotionCard } from './UI.jsx'
-import { calcPace, calcRunCalories, formatDate, getLast30Days } from '../utils/calculations.js'
+import { calcPace, calcRunCalories, formatDate, getLast30Days, formatLocalYYYYMMDD } from '../utils/calculations.js'
 import { Chart as ChartJS, CategoryScale, LinearScale, PointElement, LineElement, Tooltip, Filler } from 'chart.js'
 
 ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, Tooltip, Filler)
@@ -11,7 +11,7 @@ ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, Tooltip,
 const RUN_TYPES = ['Easy Run', 'Interval', 'Tempo', 'Long Run', 'Recovery', 'Race']
 
 export default function RunningTracker({ runs, addRun, deleteRun, profile }) {
-  const today = new Date().toISOString().split('T')[0]
+  const today = formatLocalYYYYMMDD()
   const [showForm, setShowForm] = useState(false)
   const [form, setForm] = useState({
     date: today, distance: '', duration: '', type: 'Easy Run', notes: '',

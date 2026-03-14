@@ -10,7 +10,7 @@ import { Target, Flame, Dumbbell, Activity, Zap, Trophy } from 'lucide-react'
 import { Card, StatCard, SectionTitle, ProgressBar, Badge, Grid, MotionCard } from './UI.jsx'
 import {
   calcBMI, bmiCategory, calcGoalProgress, getWeekDates, getLast30Days,
-  formatDate, weeklyAvg, getStreakDays,
+  formatDate, weeklyAvg, getStreakDays, formatLocalYYYYMMDD
 } from '../utils/calculations.js'
 
 ChartJS.register(
@@ -48,7 +48,7 @@ const chartDefaults = {
 }
 
 export default function Dashboard({ logs, workouts, runs, profile }) {
-  const today = new Date().toISOString().split('T')[0]
+  const today = formatLocalYYYYMMDD()
   const todayLog = logs[today] || {}
   const last30 = getLast30Days()
   const weekDates = getWeekDates()

@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import { motion } from 'framer-motion'
 import { useAuth } from '@/contexts/AuthContext'
 import { useProfile } from '@/hooks/useStorage'
+import { formatLocalYYYYMMDD } from '@/utils/calculations'
 import { Activity, Target } from 'lucide-react'
 import { Card, SectionTitle, InputRow, Btn } from '@/components/UI'
 
@@ -72,7 +73,7 @@ export default function Onboarding() {
       startWeight: Number(form.currentWeight),
       goalWeight: Number(form.goalWeight),
       height: Number(form.height),
-      startDate: new Date().toISOString().split('T')[0],
+      startDate: formatLocalYYYYMMDD(),
       dailyCalorieTarget: calories,
       dailyProteinTarget: protein,
       geminiApiKey: ''

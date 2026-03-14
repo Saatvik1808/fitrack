@@ -31,9 +31,16 @@ export default function DailyLog({ logs, setLog, today, profile }) {
   }
 
   function shiftDate(dir) {
-    const d = new Date(date + 'T00:00:00')
-    d.setDate(d.getDate() + dir)
-    const next = d.toISOString().split('T')[0]
+    const [y, m, d] = date.split('-').map(Number)
+    const nextDate = new Date(y, m - 1, d)
+    nextDate.setDate(nextDate.getDate() + dir)
+    
+    // Format back to YYYY-MM-DD using local time, avoiding UTC shifts
+    const yy = nextDate.getFullYear()
+    const mm = String(nextDate.getMonth() + 1).padStart(2, '0')
+    const dd = String(nextDate.getDate()).padStart(2, '0')
+    const next = `${yy}-${mm}-${dd}`
+    
     if (next <= today) setDate(next)
   }
 

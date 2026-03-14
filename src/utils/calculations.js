@@ -1,3 +1,10 @@
+export function formatLocalYYYYMMDD(d = new Date()) {
+  const yy = d.getFullYear()
+  const mm = String(d.getMonth() + 1).padStart(2, '0')
+  const dd = String(d.getDate()).padStart(2, '0')
+  return `${yy}-${mm}-${dd}`
+}
+
 export function calcBMI(weightKg, heightCm) {
   const h = heightCm / 100
   return +(weightKg / (h * h)).toFixed(1)
@@ -42,7 +49,7 @@ export function getWeekDates() {
   for (let i = 6; i >= 0; i--) {
     const d = new Date(today)
     d.setDate(d.getDate() - i)
-    dates.push(d.toISOString().split('T')[0])
+    dates.push(formatLocalYYYYMMDD(d))
   }
   return dates
 }
@@ -53,7 +60,7 @@ export function getLast30Days() {
   for (let i = 29; i >= 0; i--) {
     const d = new Date(today)
     d.setDate(d.getDate() - i)
-    dates.push(d.toISOString().split('T')[0])
+    dates.push(formatLocalYYYYMMDD(d))
   }
   return dates
 }
@@ -84,7 +91,7 @@ export function getStreakDays(logs) {
   for (let i = 0; i < 365; i++) {
     const d = new Date(today)
     d.setDate(d.getDate() - i)
-    const key = d.toISOString().split('T')[0]
+    const key = formatLocalYYYYMMDD(d)
     const log = logs[key]
     if (log && Object.keys(log).length > 0) streak++
     else if (i > 0) break

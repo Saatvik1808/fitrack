@@ -26,8 +26,10 @@ function userKeys(userId) {
   }
 }
 
+import { formatLocalYYYYMMDD } from '../utils/calculations.js'
+
 function getToday() {
-  return new Date().toISOString().split('T')[0]
+  return formatLocalYYYYMMDD()
 }
 
 function getDefaultProfile(userEmail) {
@@ -247,7 +249,7 @@ export function exportData(userId) {
     logs: load(keys.LOGS, {}),
     workouts: load(keys.WORKOUTS, []),
     runs: load(keys.RUNS, []),
-    exportedAt: new Date().toISOString(),
+    exportedAt: formatLocalYYYYMMDD() + 'T' + new Date().toTimeString().split(' ')[0],
   }
   const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' })
   const url = URL.createObjectURL(blob)
