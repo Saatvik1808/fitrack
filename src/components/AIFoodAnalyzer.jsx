@@ -57,6 +57,7 @@ export default function AIFoodAnalyzer({ onAddToLog, apiKey }) {
 
   function handleSaveToLog() {
     onAddToLog({
+      foodName: edited.foodName || result.foodName || 'AI Food Match',
       calories: edited.calories,
       protein: edited.protein,
       carbs: edited.carbs,
