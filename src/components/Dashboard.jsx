@@ -179,7 +179,7 @@ export default function Dashboard({ logs, workouts, runs, profile }) {
   const weeklyCalAvg = weeklyAvg(logs, 'calories')
   const weeklyProtAvg = weeklyAvg(logs, 'protein')
 
-  const totalRunKm = runs.reduce((s, r) => s + (r.distance || 0), 0)
+  const totalRunKm = runs.reduce((s, r) => s + (Number(r.distance) || 0), 0)
 
   // -- Modal Content Renderer -- //
   function renderAnalysisModal() {
