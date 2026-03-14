@@ -57,8 +57,25 @@ export default function DashboardPage() {
     }
   }
 
-  // Show loading while checking auth
-  if (loading || !user) {
+  const [dbChecked, setDbChecked] = useState(false)
+  
+  // Give background DB sync time to complete before forcing onboarding on new devices
+  useEffect(() => {
+    if (user) {
+      const timer = setTimeout(() => setDbChecked(true), 1500)
+      return () => clearTimeout(timer)
+    }
+  }, [user])
+
+  // Check if profile is completely empty
+  useEffect(() => {
+    if (!loading && user && dbChecked && profile && !profile.currentWeight) {
+      router.push('/onboarding')
+    }
+  }, [user, loading, profile, router, dbChecked])
+
+  // Show loading while checking auth or waiting for sync
+  if (loading || !user || (!profile?.currentWeight && !dbChecked)) {
     return (
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '100vh' }}>
         <div style={{
