@@ -1,6 +1,6 @@
 /**
  * Google Gemini API - Food Image Analysis
- * Model: gemini-1.5-flash (vision-capable, fast & free tier available)
+ * Model: gemini-2.5-flash (vision-capable, fast & free tier available)
  * 
  * SETUP:
  * 1. Go to https://aistudio.google.com/app/apikey
@@ -8,7 +8,7 @@
  * 3. Enter it in Settings > Gemini API Key inside the app
  */
 
-const GEMINI_API_URL = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent'
+const GEMINI_API_URL = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent'
 
 const FOOD_ANALYSIS_PROMPT = `You are a professional nutritionist and food recognition AI.
 

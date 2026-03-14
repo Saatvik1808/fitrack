@@ -264,7 +264,7 @@ export default function AIFoodAnalyzer({ onAddToLog, apiKey }) {
           <div style={{ fontSize: 12, fontWeight: 600, color: 'var(--text2)', marginBottom: 10 }}>How it works</div>
           {[
             [<CameraIcon size={16}/>, 'Upload a clear photo of your food'],
-            [<Zap size={16}/>, 'Gemini 1.5 Flash analyzes the image'],
+            [<Zap size={16}/>, 'Gemini 2.5 Flash analyzes the image'],
             [<Activity size={16}/>, 'Get estimated calories, protein, carbs & fat'],
             [<Edit2 size={16}/>, 'Edit the values if needed'],
             [<CheckCircle2 size={16}/>, 'Save directly to today\'s nutrition log'],
