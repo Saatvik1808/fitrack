@@ -85,7 +85,7 @@ function save(key, value, userId, collectionName) {
   }
 }
 
-// Fetch from Firestore on mount
+// Fetch from Firestore on mount and merge with local
 async function fetchFromDb(userId, collectionName, key, setState) {
   if (!userId || !db) return
   try {
@@ -93,8 +93,25 @@ async function fetchFromDb(userId, collectionName, key, setState) {
     const snap = await getDoc(docRef)
     if (snap.exists() && snap.data().data) {
       const remoteData = snap.data().data
-      setState(remoteData)
-      try { localStorage.setItem(key, JSON.stringify(remoteData)) } catch {}
+
+      setState(localData => {
+        let merged;
+        // Arrays (Workouts, Runs) - merge by ID
+        if (Array.isArray(remoteData) && Array.isArray(localData)) {
+          const localMap = new Map((localData || []).map(item => [item.id, item]))
+          remoteData.forEach(item => { if (!localMap.has(item.id)) localMap.set(item.id, item) })
+          merged = Array.from(localMap.values()).sort((a, b) => b.id - a.id) // keep newest first
+        } 
+        // Objects (Logs, Profile) - shallow merge
+        else if (typeof remoteData === 'object' && remoteData !== null) {
+          merged = { ...remoteData, ...(localData || {}) }
+        } else {
+          merged = remoteData
+        }
+
+        try { localStorage.setItem(key, JSON.stringify(merged)) } catch {}
+        return merged
+      })
     }
   } catch (err) {
     console.error("Firestore fetch error:", err)
