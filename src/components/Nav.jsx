@@ -117,8 +117,10 @@ export default function Nav({ active, onChange, onLogout }) {
         borderTop: '1px solid var(--border)',
         display: 'flex',
         justifyContent: 'space-around',
-        padding: '8px 0 calc(8px + env(safe-area-inset-bottom))',
-        zIndex: 100,
+        padding: '8px 0 calc(8px + env(safe-area-inset-bottom, 20px))', // Fallback for env
+        zIndex: 1000,
+        transform: 'translateZ(0)', // Force GPU acceleration (fixes iOS scroll bounce detach)
+        WebkitTransform: 'translateZ(0)',
       }} className="mobile-nav fade-in">
         {mobileNav.map(({ id, icon: Icon, label }) => (
           <button

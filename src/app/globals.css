@@ -49,10 +49,18 @@ body {
   font-family: 'Space Grotesk', sans-serif;
   background: var(--bg);
   color: var(--text);
-  min-height: 100dvh;
+  min-height: 100vh;
+  /* iOS fixed-bottom navbar hack */
+  min-height: -webkit-fill-available;
   overflow-x: hidden;
+  overscroll-behavior-y: none; /* Prevents iOS rubber banding that detaches navbar */
   -webkit-font-smoothing: antialiased;
   transition: background 0.25s ease, color 0.25s ease;
+}
+
+/* Also apply to html for the fill-available to work */
+html {
+  height: -webkit-fill-available;
 }
 
 button {
