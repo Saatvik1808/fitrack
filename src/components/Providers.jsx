@@ -1,7 +1,12 @@
 "use client";
 
+import { useState, useEffect } from 'react';
 import { AuthProvider } from '@/contexts/AuthContext';
 
 export function Providers({ children }) {
-  return <AuthProvider>{children}</AuthProvider>;
+  return (
+    <AuthProvider>
+      {children}
+    </AuthProvider>
+  );
 }

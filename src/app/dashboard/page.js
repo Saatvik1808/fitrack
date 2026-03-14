@@ -1,165 +1,172 @@
 "use client";
 
-import { useEffect, useState } from 'react';
-import { useAuth } from '@/contexts/AuthContext';
-import { doc, getDoc, collection, query, orderBy, limit, getDocs } from 'firebase/firestore';
-import { db } from '@/lib/firebase/config';
-import {
-  Chart as ChartJS,
-  CategoryScale,
-  LinearScale,
-  PointElement,
-  LineElement,
-  BarElement,
-  Title,
-  Tooltip,
-  Legend,
-  Filler
-} from 'chart.js';
-import { Line, Bar } from 'react-chartjs-2';
-import { Activity, Flame, Dumbbell, Route } from 'lucide-react';
+import React, { useState, useEffect } from 'react'
+import { useRouter } from 'next/navigation'
+import { motion, AnimatePresence } from 'framer-motion'
+import { useAuth } from '@/contexts/AuthContext'
+import Nav from '@/components/Nav.jsx'
+import Dashboard from '@/components/Dashboard.jsx'
+import DailyLog from '@/components/DailyLog.jsx'
+import WorkoutLogger from '@/components/WorkoutLogger.jsx'
+import RunningTracker from '@/components/RunningTracker.jsx'
+import AIFoodAnalyzer from '@/components/AIFoodAnalyzer.jsx'
+import History from '@/components/History.jsx'
+import Settings from '@/components/Settings.jsx'
+import AppDownload from '@/components/AppDownload.jsx'
+import { useProfile, useDailyLogs, useWorkouts, useRuns } from '@/hooks/useStorage.js'
+import { useTheme } from '@/hooks/useTheme.js'
+import { LogOut } from 'lucide-react'
 
-ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, BarElement, Title, Tooltip, Legend, Filler);
+export default function DashboardPage() {
+  const { user, loading, logout } = useAuth()
+  const router = useRouter()
 
-export default function Dashboard() {
-  const { user, userProfile } = useAuth();
-  const [plan, setPlan] = useState(null);
-  const [recentLogs, setRecentLogs] = useState([]);
-  const [loading, setLoading] = useState(true);
-
+  // Redirect to login if not authenticated
   useEffect(() => {
-    async function fetchData() {
-      if (!user) return;
-      try {
-        const planSnap = await getDoc(doc(db, 'userPlans', user.uid));
-        if (planSnap.exists()) {
-          setPlan(planSnap.data());
-        }
-
-        const logsRef = collection(db, 'dailyLogs', user.uid, 'logs');
-        const q = query(logsRef, orderBy('date', 'desc'), limit(7));
-        const qSnap = await getDocs(q);
-        
-        const logs = [];
-        qSnap.forEach(doc => {
-          logs.push({ id: doc.id, ...doc.data() });
-        });
-        setRecentLogs(logs.reverse()); // chronological for chart
-      } catch (err) {
-        console.error("Error fetching dashboard data", err);
-      } finally {
-        setLoading(false);
-      }
+    if (!loading && !user) {
+      router.push('/')
     }
-    fetchData();
-  }, [user]);
+  }, [user, loading, router])
 
-  if (loading) {
-    return (
-      <div className="flex-center" style={{ minHeight: '60vh' }}>
-        <div className="spinner"></div>
-      </div>
-    );
+  const [page, setPage] = useState('dashboard')
+  
+  // Pass userId and email to hooks for data isolation and migration
+  const [profile, setProfile] = useProfile(user?.uid, user?.email)
+  const { logs, setLog, getLog, getTodayLog, today } = useDailyLogs(user?.uid)
+  const { workouts, addWorkout, deleteWorkout } = useWorkouts(user?.uid)
+  const { runs, addRun, deleteRun } = useRuns(user?.uid)
+  const [theme, setTheme] = useTheme()
+
+  function handleAddFoodToLog(nutrition) {
+    const todayLog = getTodayLog()
+    setLog(today, {
+      calories: (Number(todayLog.calories) || 0) + Number(nutrition.calories || 0),
+      protein: (Number(todayLog.protein) || 0) + Number(nutrition.protein || 0),
+      carbs: (Number(todayLog.carbs) || 0) + Number(nutrition.carbs || 0),
+      fat: (Number(todayLog.fat) || 0) + Number(nutrition.fat || 0),
+    })
+    setPage('log')
   }
 
-  // Fallback info
-  const todayLog = recentLogs.length > 0 && recentLogs[recentLogs.length - 1].date === new Date().toISOString().split('T')[0] 
-      ? recentLogs[recentLogs.length - 1] 
-      : { calories: 0, protein: 0, carbs: 0, fat: 0 };
-
-  const targetCals = plan?.dailyCalories || 2000;
-  const currentCals = todayLog.calories || 0;
-
-  const chartData = {
-    labels: recentLogs.map(l => l.date),
-    datasets: [
-      {
-        label: 'Calories Consumed',
-        data: recentLogs.map(l => l.calories || 0),
-        borderColor: 'rgba(59, 130, 246, 1)',
-        backgroundColor: 'rgba(59, 130, 246, 0.2)',
-        fill: true,
-        tension: 0.4
-      }
-    ]
-  };
-
-  const chartOptions = {
-    responsive: true,
-    plugins: {
-      legend: { position: 'top', labels: { color: '#94a3b8' } },
-    },
-    scales: {
-      y: { ticks: { color: '#94a3b8' }, grid: { color: 'rgba(255,255,255,0.05)' } },
-      x: { ticks: { color: '#94a3b8' }, grid: { display: false } }
+  const handleLogout = async () => {
+    try {
+      await logout()
+      router.push('/')
+    } catch(err) {
+      console.error(err)
     }
-  };
+  }
+
+  const [dbChecked, setDbChecked] = useState(false)
+  
+  // Give background DB sync time to complete before forcing onboarding on new devices
+  useEffect(() => {
+    if (user) {
+      const timer = setTimeout(() => setDbChecked(true), 1500)
+      return () => clearTimeout(timer)
+    }
+  }, [user])
+
+  // Check if profile is completely empty
+  useEffect(() => {
+    if (!loading && user && dbChecked && profile && !profile.currentWeight) {
+      router.push('/onboarding')
+    }
+  }, [user, loading, profile, router, dbChecked])
+
+  // Show loading while checking auth or waiting for sync
+  if (loading || !user || (!profile?.currentWeight && !dbChecked)) {
+    return (
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '100vh' }}>
+        <div style={{
+          width: 32, height: 32,
+          border: '3px solid var(--border)',
+          borderTop: '3px solid var(--accent)',
+          borderRadius: '50%',
+          animation: 'spin 0.8s linear infinite',
+        }} />
+      </div>
+    )
+  }
+
+  const pages = {
+    dashboard: <Dashboard logs={logs} workouts={workouts} runs={runs} profile={profile} />,
+    log: <DailyLog logs={logs} setLog={setLog} today={today} profile={profile} />,
+    workout: <WorkoutLogger workouts={workouts} addWorkout={addWorkout} deleteWorkout={deleteWorkout} />,
+    running: <RunningTracker runs={runs} addRun={addRun} deleteRun={deleteRun} profile={profile} />,
+    ai: <AIFoodAnalyzer onAddToLog={handleAddFoodToLog} apiKey={profile.geminiApiKey} />,
+    history: <History logs={logs} workouts={workouts} runs={runs} />,
+    settings: <Settings profile={profile} setProfile={setProfile} theme={theme} setTheme={setTheme} />,
+    download: <AppDownload />,
+  }
 
   return (
-    <div style={{ paddingBottom: '2rem' }}>
-      <header style={{ marginBottom: '2rem' }}>
-        <h1 className="title-glow" style={{ fontSize: '2.5rem', marginBottom: '0.5rem' }}>
-          Welcome back, {user?.displayName?.split(' ')[0] || 'Athlete'}
-        </h1>
-        <p className="subtitle">Here is your daily overview</p>
-      </header>
+    <div style={{ minHeight: '100dvh', display: 'flex' }}>
+      <Nav active={page} onChange={setPage} />
 
-      {/* Top Stats Cards */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1rem', marginBottom: '2rem' }}>
+      {/* Main content */}
+      <main style={{
+        marginLeft: 'var(--sidebar-width, 220px)',
+        padding: '1.5rem 1.25rem',
+        paddingBottom: 'calc(1.5rem + env(safe-area-inset-bottom))',
+        paddingTop: 'calc(1.5rem + env(safe-area-inset-top))',
+        width: '100%',
+        maxWidth: 768,
+        margin: '0 auto',
+        minHeight: '100dvh',
+        boxSizing: 'border-box',
+        position: 'relative'
+      }}>
         
-        <div className="glass-card" style={{ padding: '1.5rem', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', color: 'var(--accent)' }}>
-            <span style={{ fontWeight: 600 }}>Calories</span>
-            <Flame size={20} />
-          </div>
-          <div style={{ fontSize: '2rem', fontWeight: 700 }}>
-            {currentCals} <span style={{ fontSize: '1rem', color: 'var(--text-muted)' }}>/ {targetCals}</span>
-          </div>
-          <div style={{ background: 'rgba(255,255,255,0.1)', height: 8, borderRadius: 4, overflow: 'hidden' }}>
-            <div style={{ 
-              background: 'var(--accent)', 
-              height: '100%', 
-              width: `${Math.min((currentCals / targetCals) * 100, 100)}%` 
-            }} />
-          </div>
-        </div>
+        {/* Logout Button */}
+        <button 
+          onClick={handleLogout}
+          style={{
+            position: 'absolute',
+            top: '1.5rem',
+            right: '1.25rem',
+            display: 'flex',
+            alignItems: 'center',
+            gap: 6,
+            background: 'var(--bg3)',
+            color: 'var(--red)',
+            border: '1px solid var(--border)',
+            padding: '8px 12px',
+            borderRadius: 8,
+            fontSize: 12,
+            fontWeight: 600,
+            cursor: 'pointer',
+            zIndex: 10,
+          }}
+        >
+          <LogOut size={14} /> Sign out
+        </button>
 
-        <div className="glass-card" style={{ padding: '1.5rem', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', color: '#c084fc' }}>
-            <span style={{ fontWeight: 600 }}>Protein</span>
-            <Dumbbell size={20} />
-          </div>
-          <div style={{ fontSize: '2rem', fontWeight: 700 }}>
-            {todayLog.protein || 0}g <span style={{ fontSize: '1rem', color: 'var(--text-muted)' }}>/ {plan?.protein || 150}g</span>
-          </div>
-        </div>
+        <AnimatePresence mode="wait">
+          <motion.div
+            key={page}
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -10 }}
+            transition={{ duration: 0.2 }}
+            style={{ paddingTop: 40 }} // Space for logout button
+          >
+            {pages[page]}
+          </motion.div>
+        </AnimatePresence>
+      </main>
 
-        <div className="glass-card" style={{ padding: '1.5rem', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', color: '#fbbf24' }}>
-            <span style={{ fontWeight: 600 }}>Goal Progress</span>
-            <Activity size={20} />
-          </div>
-          <div style={{ fontSize: '2rem', fontWeight: 700 }}>
-            {userProfile?.weight}kg <span style={{ fontSize: '1rem', color: 'var(--text-muted)' }}>→ {userProfile?.goalWeight}kg</span>
-          </div>
-        </div>
-
-      </div>
-
-      {/* Chart Section */}
-      <div className="glass-card" style={{ padding: '1.5rem', marginBottom: '2rem' }}>
-        <h3 style={{ marginBottom: '1rem', fontSize: '1.25rem' }}>Weekly Calorie Trend</h3>
-        <div style={{ height: 300 }}>
-           {recentLogs.length > 0 ? (
-             <Line data={chartData} options={chartOptions} />
-           ) : (
-             <div className="flex-center" style={{ height: '100%', color: 'var(--text-muted)' }}>
-               No log data for this week yet. Start logging!
-             </div>
-           )}
-        </div>
-      </div>
-
+      <style>{`
+        @media (max-width: 768px) {
+          main {
+            margin-left: 0 !important;
+            padding-bottom: calc(90px + env(safe-area-inset-bottom)) !important;
+            padding-top: calc(2rem + env(safe-area-inset-top)) !important;
+            padding-left: 1rem !important;
+            padding-right: 1rem !important;
+          }
+        }
+      `}</style>
     </div>
-  );
+  )
 }

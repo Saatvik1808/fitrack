@@ -1,154 +1,141 @@
 "use client";
 
-import { useState } from 'react';
-import { useRouter } from 'next/navigation';
-import { doc, setDoc } from 'firebase/firestore';
-import { db } from '@/lib/firebase/config';
-import { useAuth } from '@/contexts/AuthContext';
+import React, { useState, useEffect } from 'react'
+import { useRouter } from 'next/navigation'
+import { motion } from 'framer-motion'
+import { useAuth } from '@/contexts/AuthContext'
+import { useProfile } from '@/hooks/useStorage'
+import { Activity, Target } from 'lucide-react'
+import { Card, SectionTitle, InputRow, Btn } from '@/components/UI'
 
-export default function OnboardingPage() {
-  const { user, loadUserProfile } = useAuth();
-  const router = useRouter();
-  const [loading, setLoading] = useState(false);
-  const [formData, setFormData] = useState({
-    age: '',
-    height: '',
-    weight: '',
+export default function Onboarding() {
+  const { user, loading } = useAuth()
+  const router = useRouter()
+  const [profile, setProfile] = useProfile(user?.uid, user?.email)
+  
+  const [form, setForm] = useState({
+    name: '',
+    currentWeight: '',
     goalWeight: '',
-    bodyType: 'mesomorph',
-    activityLevel: 'moderately_active',
-    fitnessGoal: 'fat_loss',
-    gymDays: '3',
-    dietPreference: 'omnivore',
-    timelineGoal: '12', // weeks
-  });
+    height: '',
+    activityLevel: 'moderate'
+  })
 
-  const handleChange = (e) => {
-    setFormData(prev => ({ ...prev, [e.target.name]: e.target.value }));
-  };
-
-  const calculateMacros = (data) => {
-    // Basic metabolic math based on Mifflin-St Jeor
-    const weightKg = parseFloat(data.weight);
-    const heightCm = parseFloat(data.height);
-    const age = parseInt(data.age);
-    // Rough estimate (assuming average between men/women since gender isn't asked for simplicity)
-    const bmr = 10 * weightKg + 6.25 * heightCm - 5 * age + 5; 
-    
-    let activityMultiplier = 1.2; // Sedentary
-    if (data.activityLevel === 'moderately_active') activityMultiplier = 1.55;
-    if (data.activityLevel === 'very_active') activityMultiplier = 1.725;
-
-    let tdee = bmr * activityMultiplier;
-
-    let targetCalories = tdee;
-    if (data.fitnessGoal === 'fat_loss') targetCalories -= 500;
-    if (data.fitnessGoal === 'muscle_gain') targetCalories += 300;
-
-    const targetProtein = weightKg * 2.2; // 2.2g per kg (or ~1g per lb)
-    const targetFat = (targetCalories * 0.25) / 9; // 25% of cals from fat
-    const targetCarbs = (targetCalories - (targetProtein * 4) - (targetFat * 9)) / 4;
-
-    return {
-      dailyCalories: Math.round(targetCalories),
-      protein: Math.round(targetProtein),
-      carbs: Math.round(targetCarbs),
-      fats: Math.round(targetFat)
-    };
-  };
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    setLoading(true);
-    try {
-      if (!user) {
-        throw new Error("No authenticated user");
-      }
-      
-      const profileData = { ...formData, userId: user.uid };
-      const planData = calculateMacros(formData);
-
-      // Save Profile
-      await setDoc(doc(db, 'users', user.uid), profileData);
-      
-      // Save Generated Plan
-      await setDoc(doc(db, 'userPlans', user.uid), {
-        ...planData,
-        userId: user.uid,
-        createdAt: new Date().toISOString()
-      });
-
-      // Update local state and redirect
-      await loadUserProfile(user.uid);
-      router.push('/dashboard');
-    } catch (err) {
-      console.error(err);
-      alert("Error saving profile");
-      setLoading(false);
+  // Redirect to login if unauthenticated
+  useEffect(() => {
+    if (!loading && !user) {
+      router.push('/')
     }
-  };
+  }, [user, loading, router])
+
+  // If profile is already populated (e.g. Saatvik), go straight to Dashboard
+  useEffect(() => {
+    if (profile && profile.currentWeight) {
+      router.push('/dashboard')
+    }
+  }, [profile, router])
+
+  const calculateTargets = () => {
+    const weight = Number(form.currentWeight)
+    const height = Number(form.height)
+    let bmr = 10 * weight + 6.25 * height - 5 * 25 + 5 // Simplified Mifflin-St Jeor
+
+    const activityMultipliers = {
+      sedentary: 1.2,
+      light: 1.375,
+      moderate: 1.55,
+      active: 1.725
+    }
+    const tdee = bmr * activityMultipliers[form.activityLevel]
+    
+    // Caloric deficit/surplus depending on goal
+    const goalDiff = Number(form.goalWeight) - weight
+    const isLosing = goalDiff < 0
+
+    const dailyCalories = Math.round(tdee + (isLosing ? -500 : (goalDiff > 0 ? 300 : 0)))
+    const dailyProtein = Math.round(weight * 2.0) // 2g per kg
+
+    return { calories: dailyCalories, protein: dailyProtein }
+  }
+
+  const handleSave = () => {
+    if (!form.name || !form.currentWeight || !form.goalWeight || !form.height) {
+      alert("Please fill all required fields")
+      return
+    }
+
+    const { calories, protein } = calculateTargets()
+
+    setProfile({
+      name: form.name,
+      currentWeight: Number(form.currentWeight),
+      startWeight: Number(form.currentWeight),
+      goalWeight: Number(form.goalWeight),
+      height: Number(form.height),
+      startDate: new Date().toISOString().split('T')[0],
+      dailyCalorieTarget: calories,
+      dailyProteinTarget: protein,
+      geminiApiKey: ''
+    })
+
+    router.push('/dashboard')
+  }
+
+  if (loading || !user) return null
 
   return (
-    <div className="flex-center full-screen" style={{ padding: '2rem' }}>
-      <div className="glass-card" style={{ maxWidth: 600, width: '100%' }}>
-        <h2 className="title-glow text-center mb-4" style={{ fontSize: '2rem' }}>Configure Your AI Plan</h2>
-        <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-          
-          <div style={{ display: 'flex', gap: '1rem' }}>
-            <div style={{ flex: 1 }}>
-              <label className="subtitle" style={{ fontSize: '0.9rem' }}>Age</label>
-              <input required type="number" name="age" value={formData.age} onChange={handleChange} className="input-field" placeholder="e.g. 25" />
+    <div style={{
+      display: 'flex', alignItems: 'center', justifyContent: 'center',
+      minHeight: '100vh', padding: '1rem', background: 'var(--bg)'
+    }}>
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        style={{ width: '100%', maxWidth: 440 }}
+      >
+        <Card style={{ padding: '2rem' }}>
+          <div style={{ textAlign: 'center', marginBottom: 24 }}>
+            <div style={{ background: 'var(--accent)18', display: 'inline-flex', padding: 14, borderRadius: 16, marginBottom: 12 }}>
+              <Target size={32} color="var(--accent)" />
             </div>
-            <div style={{ flex: 1 }}>
-              <label className="subtitle" style={{ fontSize: '0.9rem' }}>Height (cm)</label>
-              <input required type="number" name="height" value={formData.height} onChange={handleChange} className="input-field" placeholder="e.g. 175" />
+            <h1 style={{ fontSize: 24, fontWeight: 700 }}>Welcome to FitTrack</h1>
+            <p style={{ fontSize: 13, color: 'var(--text3)', marginTop: 4 }}>Let's set up your personal training profile.</p>
+          </div>
+
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+            <InputRow label="Your Name">
+              <input type="text" placeholder="John Doe" value={form.name} onChange={e => setForm(p => ({ ...p, name: e.target.value }))} />
+            </InputRow>
+
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+              <InputRow label="Current Weight" hint="kg">
+                <input type="number" placeholder="e.g. 75" value={form.currentWeight} onChange={e => setForm(p => ({ ...p, currentWeight: e.target.value }))} />
+              </InputRow>
+
+              <InputRow label="Goal Weight" hint="kg">
+                <input type="number" placeholder="e.g. 68" value={form.goalWeight} onChange={e => setForm(p => ({ ...p, goalWeight: e.target.value }))} />
+              </InputRow>
             </div>
+
+            <InputRow label="Height" hint="cm">
+              <input type="number" placeholder="e.g. 175" value={form.height} onChange={e => setForm(p => ({ ...p, height: e.target.value }))} />
+            </InputRow>
+
+            <InputRow label="Activity Level">
+              <select value={form.activityLevel} onChange={e => setForm(p => ({...p, activityLevel: e.target.value}))}>
+                <option value="sedentary">Sedentary (Office job, little exercise)</option>
+                <option value="light">Light (Exercise 1-3 days/week)</option>
+                <option value="moderate">Moderate (Exercise 3-5 days/week)</option>
+                <option value="active">Active (Exercise 6-7 days/week)</option>
+              </select>
+            </InputRow>
           </div>
 
-          <div style={{ display: 'flex', gap: '1rem' }}>
-            <div style={{ flex: 1 }}>
-              <label className="subtitle" style={{ fontSize: '0.9rem' }}>Current Weight (kg)</label>
-              <input required type="number" name="weight" value={formData.weight} onChange={handleChange} className="input-field" placeholder="e.g. 75" />
-            </div>
-            <div style={{ flex: 1 }}>
-              <label className="subtitle" style={{ fontSize: '0.9rem' }}>Goal Weight (kg)</label>
-              <input required type="number" name="goalWeight" value={formData.goalWeight} onChange={handleChange} className="input-field" placeholder="e.g. 70" />
-            </div>
-          </div>
-
-          <div>
-            <label className="subtitle" style={{ fontSize: '0.9rem' }}>Fitness Goal</label>
-            <select name="fitnessGoal" value={formData.fitnessGoal} onChange={handleChange} className="input-field">
-              <option value="fat_loss">Fat Loss</option>
-              <option value="muscle_gain">Muscle Gain</option>
-              <option value="general_fitness">General Fitness / Recomp</option>
-              <option value="running">Running Performance</option>
-            </select>
-          </div>
-
-          <div>
-            <label className="subtitle" style={{ fontSize: '0.9rem' }}>Activity Level</label>
-            <select name="activityLevel" value={formData.activityLevel} onChange={handleChange} className="input-field">
-              <option value="sedentary">Sedentary (Office Job)</option>
-              <option value="moderately_active">Moderately Active (3-4 days/week)</option>
-              <option value="very_active">Very Active (5+ days/week)</option>
-            </select>
-          </div>
-
-          <div>
-            <label className="subtitle" style={{ fontSize: '0.9rem' }}>Dietary Preference</label>
-            <select name="dietPreference" value={formData.dietPreference} onChange={handleChange} className="input-field">
-              <option value="omnivore">Omnivore / No Restrictions</option>
-              <option value="vegetarian">Vegetarian</option>
-              <option value="vegan">Vegan</option>
-            </select>
-          </div>
-
-          <button type="submit" className="btn-primary mt-4" disabled={loading} style={{ marginTop: '1rem' }}>
-            {loading ? 'Generating Plan...' : 'Generate My AI Fitness Plan'}
-          </button>
-        </form>
-      </div>
+          <Btn onClick={handleSave} variant="primary" style={{ width: '100%', justifyContent: 'center', marginTop: 24, padding: '14px' }}>
+            Calculate My Targets & Start
+          </Btn>
+        </Card>
+      </motion.div>
     </div>
-  );
+  )
 }
