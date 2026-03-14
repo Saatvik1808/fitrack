@@ -53,9 +53,14 @@ export default function Dashboard({ logs, workouts, runs, profile }) {
   const last30 = getLast30Days()
   const weekDates = getWeekDates()
 
-  const bmi = calcBMI(profile.currentWeight, profile.height)
+  const safeWeight = profile?.currentWeight || 0
+  const safeGoal = profile?.goalWeight || 0
+  const safeStart = profile?.startWeight || 0
+  const safeHeight = profile?.height || 0
+
+  const bmi = safeWeight && safeHeight ? calcBMI(safeWeight, safeHeight) : 0
   const bmiCat = bmiCategory(bmi)
-  const goalPct = calcGoalProgress(profile.currentWeight, profile.startWeight, profile.goalWeight)
+  const goalPct = safeGoal ? calcGoalProgress(safeWeight, safeStart, safeGoal) : 0
   const streak = getStreakDays(logs)
 
   // Weight trend data
@@ -151,11 +156,11 @@ export default function Dashboard({ logs, workouts, runs, profile }) {
       <Grid cols={2} gap={10}>
         <StatCard
           label="Current Weight"
-          value={profile.currentWeight}
+          value={safeWeight}
           unit="kg"
           color="var(--accent2)"
           icon={Target}
-          sub={`Goal: ${profile.goalWeight} kg`}
+          sub={safeGoal ? `Goal: ${safeGoal} kg` : 'Set a goal'}
           delay={0.0}
         />
         <StatCard
@@ -164,7 +169,7 @@ export default function Dashboard({ logs, workouts, runs, profile }) {
           unit="%"
           color="var(--green)"
           icon={Trophy}
-          sub={`${(profile.currentWeight - profile.goalWeight).toFixed(1)} kg to go`}
+          sub={`${safeWeight && safeGoal ? Math.abs(safeWeight - safeGoal).toFixed(1) : 0} kg to go`}
           delay={0.05}
         />
         <StatCard
@@ -189,14 +194,14 @@ export default function Dashboard({ logs, workouts, runs, profile }) {
       {/* Goal progress bar */}
       <Card style={{ marginTop: 14 }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8 }}>
-          <span style={{ fontSize: 12, color: 'var(--text2)', fontWeight: 500 }}>Weight goal: {profile.startWeight} → {profile.goalWeight} kg</span>
+          <span style={{ fontSize: 12, color: 'var(--text2)', fontWeight: 500 }}>Weight goal: {safeStart} → {safeGoal} kg</span>
           <Badge color="var(--green)">{goalPct}% complete</Badge>
         </div>
         <ProgressBar value={goalPct} max={100} color="var(--green)" />
         <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 6, fontSize: 11, color: 'var(--text3)' }}>
-          <span>Start: {profile.startWeight} kg</span>
-          <span>Now: {profile.currentWeight} kg</span>
-          <span>Goal: {profile.goalWeight} kg</span>
+          <span>Start: {safeStart} kg</span>
+          <span>Now: {safeWeight} kg</span>
+          <span>Goal: {safeGoal} kg</span>
         </div>
       </Card>
 
