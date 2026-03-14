@@ -118,7 +118,7 @@ export default function DashboardPage() {
     running: <RunningTracker runs={runs} addRun={addRun} deleteRun={deleteRun} profile={profile} />,
     ai: <AIFoodAnalyzer onAddToLog={handleAddFoodToLog} apiKey={profile.geminiApiKey} />,
     history: <History logs={logs} workouts={workouts} runs={runs} />,
-    settings: <Settings profile={profile} setProfile={setProfile} theme={theme} setTheme={setTheme} />,
+    settings: <Settings profile={profile} setProfile={setProfile} theme={theme} setTheme={setTheme} user={user} onLogout={handleLogout} />,
     download: <AppDownload />,
   }
 

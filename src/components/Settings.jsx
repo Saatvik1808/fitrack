@@ -1,11 +1,11 @@
 import React, { useState } from 'react'
 import { motion } from 'framer-motion'
-import { Save, Key, User, Target, Trash2, AlertTriangle, Palette, Moon, Sun, Monitor, AlertCircle, Lock } from 'lucide-react'
+import { Save, Key, User, Target, Trash2, AlertTriangle, Palette, Moon, Sun, Monitor, AlertCircle, Lock, LogOut, RefreshCw, Mail } from 'lucide-react'
 import { Card, Btn, InputRow, SectionTitle, Divider, Grid, MotionCard } from './UI.jsx'
 import { calcBMI, bmiCategory } from '../utils/calculations.js'
 
 
-export default function Settings({ profile, setProfile, theme = 'dark', setTheme = () => {} }) {
+export default function Settings({ profile, setProfile, theme = 'dark', setTheme = () => {}, user, onLogout }) {
   const [form, setForm] = useState({ ...profile })
   const [saved, setSaved] = useState(false)
   const [showKey, setShowKey] = useState(false)
@@ -30,8 +30,49 @@ export default function Settings({ profile, setProfile, theme = 'dark', setTheme
     <div className="fade-in">
       <h2 style={{ fontSize: 18, fontWeight: 700, marginBottom: 16 }}>Settings</h2>
 
+      {/* Account */}
+      {user && (
+        <MotionCard style={{ marginBottom: 14 }} delay={0}>
+          <SectionTitle>
+            <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+              <Mail size={15} /> Account
+            </span>
+          </SectionTitle>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginBottom: 16 }}>
+            {user.photoURL ? (
+              <img
+                src={user.photoURL}
+                alt=""
+                style={{ width: 48, height: 48, borderRadius: '50%', border: '2px solid var(--border)', objectFit: 'cover' }}
+                referrerPolicy="no-referrer"
+              />
+            ) : (
+              <div style={{ width: 48, height: 48, borderRadius: '50%', background: 'var(--accent)22', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 20, fontWeight: 700, color: 'var(--accent2)', border: '2px solid var(--border)' }}>
+                {(user.displayName || user.email || '?')[0].toUpperCase()}
+              </div>
+            )}
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{ fontSize: 15, fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                {user.displayName || 'User'}
+              </div>
+              <div style={{ fontSize: 12, color: 'var(--text3)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                {user.email}
+              </div>
+            </div>
+          </div>
+          <Grid cols={2} gap={10}>
+            <Btn variant="secondary" size="sm" style={{ justifyContent: 'center' }} onClick={() => { if (onLogout) onLogout() }}>
+              <LogOut size={14} /> Sign Out
+            </Btn>
+            <Btn variant="ghost" size="sm" style={{ justifyContent: 'center' }} onClick={() => { if (onLogout) onLogout() }}>
+              <RefreshCw size={14} /> Switch Account
+            </Btn>
+          </Grid>
+        </MotionCard>
+      )}
+
       {/* Profile */}
-      <MotionCard style={{ marginBottom: 14 }} delay={0}>
+      <MotionCard style={{ marginBottom: 14 }} delay={user ? 0.05 : 0}>
         <SectionTitle>
           <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
             <User size={15} /> Profile
