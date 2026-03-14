@@ -111,6 +111,17 @@ export default function Dashboard({ logs, workouts, runs, profile }) {
     }]
   }), [logs, last30])
 
+  // **NEW**: 30-day protein data (for modal)
+  const proteinData30 = useMemo(() => ({
+    labels: last30.map(d => formatDate(d)),
+    datasets: [{
+      data: last30.map(d => Number(logs[d]?.protein) || 0),
+      backgroundColor: '#3b82f644',
+      hoverBackgroundColor: '#3b82f6',
+      borderRadius: 4,
+    }]
+  }), [logs, last30])
+
   // Running distance chart
   const runData = useMemo(() => {
     const last14 = last30.slice(-14)
@@ -381,14 +392,140 @@ export default function Dashboard({ logs, workouts, runs, profile }) {
           </div>
         )}
 
-        {['goal', 'protein', 'running', 'workouts'].includes(selectedAnalysis) && (
-          <div style={{ textAlign: 'center', padding: '2rem 1rem' }}>
-            <Activity size={40} color="var(--accent)" style={{ margin: '0 auto 1rem', opacity: 0.5 }} />
-            <h3 style={{ fontSize: 18, marginBottom: 8 }}>Analysis generating...</h3>
-            <p style={{ fontSize: 13, color: 'var(--text3)', lineHeight: 1.5 }}>
-              This module tracks highly detailed historic aggregations for this metric. 
-              Continue logging data consistently to unlock AI-driven insights on your {selectedAnalysis} trends.
-            </p>
+        {selectedAnalysis === 'goal' && (
+          <div>
+            <p style={{ color: 'var(--text3)', fontSize: 13, marginBottom: 16 }}>Your trajectory towards your target weight based on your selected start and goal metrics.</p>
+            
+            <div style={{ background: 'var(--bg2)', padding: '24px 20px', borderRadius: 16, marginBottom: 24, position: 'relative' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24, position: 'relative', zIndex: 2 }}>
+                
+                {/* Flow Diagram - Start */}
+                <div style={{ textAlign: 'center', flex: 1 }}>
+                  <div style={{ width: 48, height: 48, borderRadius: '50%', background: 'var(--bg3)', border: '2px solid var(--border)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 8px', fontSize: 14, fontWeight: 700, color: 'var(--text2)' }}>
+                    {safeStart}
+                  </div>
+                  <div style={{ fontSize: 11, color: 'var(--text3)', fontWeight: 600, letterSpacing: 1 }}>START</div>
+                </div>
+
+                {/* Flow Diagram - Current */}
+                <div style={{ textAlign: 'center', flex: 1 }}>
+                  <div style={{ width: 56, height: 56, borderRadius: '50%', background: 'var(--accent)22', border: '2px solid var(--accent)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 8px', fontSize: 16, fontWeight: 800, color: 'var(--accent2)', boxShadow: '0 0 20px rgba(108,99,255,0.2)' }}>
+                    {safeWeight}
+                  </div>
+                  <div style={{ fontSize: 11, color: 'var(--accent)', fontWeight: 600, letterSpacing: 1 }}>CURRENT</div>
+                </div>
+
+                {/* Flow Diagram - Goal */}
+                <div style={{ textAlign: 'center', flex: 1 }}>
+                  <div style={{ width: 48, height: 48, borderRadius: '50%', background: 'var(--green)22', border: '2px dashed var(--green)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 8px', fontSize: 14, fontWeight: 700, color: 'var(--green)' }}>
+                    {safeGoal}
+                  </div>
+                  <div style={{ fontSize: 11, color: 'var(--text3)', fontWeight: 600, letterSpacing: 1 }}>GOAL</div>
+                </div>
+              </div>
+
+              {/* Connecting Line behind circles */}
+              <div style={{ position: 'absolute', top: 48, left: '16%', right: '16%', height: 2, background: 'var(--border)', zIndex: 1 }} />
+              <div style={{ position: 'absolute', top: 48, left: '16%', width: `${Math.max(0, Math.min(100, goalPct * 0.68))}%`, height: 2, background: 'var(--accent)', zIndex: 1, transition: 'width 1s ease-out' }} />
+
+              <div style={{ textAlign: 'center', marginTop: 12 }}>
+                <div style={{ fontSize: 24, fontWeight: 800, color: 'var(--text)' }}>
+                  {Math.abs(safeStart - safeWeight).toFixed(1)} <span style={{ fontSize: 14, color: 'var(--text2)', fontWeight: 500 }}>kg {safeStart > safeGoal ? 'lost' : 'gained'}</span>
+                </div>
+                <div style={{ fontSize: 13, color: 'var(--text3)', marginTop: 4 }}>
+                  {Math.abs(safeWeight - safeGoal).toFixed(1)} kg remaining to hit your target
+                </div>
+              </div>
+            </div>
+
+            <div style={{ background: 'var(--bg3)', padding: 16, borderRadius: 12, display: 'flex', gap: 12, alignItems: 'center' }}>
+               <Target size={24} color="var(--accent)" style={{ flexShrink: 0 }} />
+               <div style={{ fontSize: 13, color: 'var(--text2)', lineHeight: 1.5 }}>
+                 {goalPct >= 100 
+                   ? "You've successfully reached your goal! It's time to set a new target in Settings or enter a maintenance phase." 
+                   : "Keep logging your weight consistently to generate an AI-projected completion date based on your recent 30-day velocity."}
+               </div>
+            </div>
+          </div>
+        )}
+
+        {selectedAnalysis === 'protein' && (
+          <div>
+            <p style={{ color: 'var(--text3)', fontSize: 13, marginBottom: 16 }}>Expanded 30-day view of your protein intake. Hitting your protein target is critical for muscle retention and growth.</p>
+            <div style={{ height: 250 }}>
+              <Bar data={proteinData30} options={chartDefaults} />
+            </div>
+            <div style={{ marginTop: 20, display: 'flex', justifyContent: 'space-between', background: 'var(--bg2)', padding: 16, borderRadius: 12 }}>
+              <div>
+                <div style={{ fontSize: 11, color: 'var(--text3)' }}>DAILY TARGET</div>
+                <div style={{ fontSize: 20, fontWeight: 700 }}>{profile.dailyProteinTarget} g</div>
+              </div>
+              <div style={{ textAlign: 'right' }}>
+                <div style={{ fontSize: 11, color: 'var(--text3)' }}>30-DAY AVERAGE</div>
+                <div style={{ fontSize: 20, fontWeight: 700, color: '#3b82f6' }}>
+                  {Math.round(last30.reduce((s, d) => s + (Number(logs[d]?.protein) || 0), 0) / 30)} g
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {selectedAnalysis === 'running' && (
+          <div>
+            <p style={{ color: 'var(--text3)', fontSize: 13, marginBottom: 16 }}>Distance accumulated over the last 14 days. Watch your mileage trends to avoid overtraining.</p>
+            {runs.length === 0 ? (
+               <div style={{ textAlign: 'center', padding: '2rem 1rem', background: 'var(--bg2)', borderRadius: 12 }}>
+                 <Activity size={32} color="var(--text3)" style={{ margin: '0 auto 12px', opacity: 0.5 }} />
+                 <div style={{ fontSize: 14, fontWeight: 500, color: 'var(--text2)' }}>No Runs Logged</div>
+                 <div style={{ fontSize: 12, color: 'var(--text3)', marginTop: 4 }}>Log runs in the Running tab to see analytics.</div>
+               </div>
+            ) : (
+               <>
+                 <div style={{ height: 250 }}>
+                   <Bar data={runData} options={chartDefaults} />
+                 </div>
+                 <Grid cols={2} gap={10} style={{ marginTop: 20 }}>
+                   <div style={{ background: 'var(--bg2)', padding: 16, borderRadius: 12 }}>
+                     <div style={{ fontSize: 11, color: 'var(--text3)' }}>TOTAL RUNS</div>
+                     <div style={{ fontSize: 24, fontWeight: 700 }}>{runs.length}</div>
+                   </div>
+                   <div style={{ background: 'var(--bg2)', padding: 16, borderRadius: 12 }}>
+                     <div style={{ fontSize: 11, color: 'var(--text3)' }}>TOTAL DISTANCE</div>
+                     <div style={{ fontSize: 24, fontWeight: 700, color: 'var(--green)' }}>{totalRunKm.toFixed(1)} <span style={{fontSize:14}}>km</span></div>
+                   </div>
+                 </Grid>
+               </>
+            )}
+          </div>
+        )}
+
+        {selectedAnalysis === 'workouts' && (
+          <div>
+            <p style={{ color: 'var(--text3)', fontSize: 13, marginBottom: 16 }}>Total lifting volume (weight × reps) across your weekly workouts. Progressive overload means this trend should go up over time.</p>
+            {workouts.length === 0 ? (
+               <div style={{ textAlign: 'center', padding: '2rem 1rem', background: 'var(--bg2)', borderRadius: 12 }}>
+                 <Dumbbell size={32} color="var(--text3)" style={{ margin: '0 auto 12px', opacity: 0.5 }} />
+                 <div style={{ fontSize: 14, fontWeight: 500, color: 'var(--text2)' }}>No Workouts Logged</div>
+                 <div style={{ fontSize: 12, color: 'var(--text3)', marginTop: 4 }}>Log sessions in the Workout tab to track volume.</div>
+               </div>
+            ) : (
+               <>
+                 <div style={{ height: 250 }}>
+                   <Bar data={volumeData} options={chartDefaults} />
+                 </div>
+                 <div style={{ marginTop: 20, background: 'var(--bg2)', padding: 16, borderRadius: 12, display: 'flex', alignItems: 'center', gap: 16 }}>
+                   <div style={{ background: '#3b82f633', padding: 12, borderRadius: 10, color: '#3b82f6' }}>
+                     <Dumbbell size={24} />
+                   </div>
+                   <div>
+                     <div style={{ fontSize: 11, color: 'var(--text3)' }}>7-DAY TOTAL VOLUME</div>
+                     <div style={{ fontSize: 24, fontWeight: 700 }}>
+                       {volumeData.datasets[0].data.reduce((a,b)=>a+b, 0).toLocaleString()} <span style={{fontSize:14, color:'var(--text3)', fontWeight:500}}>kg</span>
+                     </div>
+                   </div>
+                 </div>
+               </>
+            )}
           </div>
         )}
       </Modal>
