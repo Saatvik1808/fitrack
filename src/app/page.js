@@ -12,7 +12,6 @@ export default function EntrancePage() {
   // States for animation sequencing
   const [showButton, setShowButton] = useState(false);
   const [exiting, setExiting] = useState(false);
-  const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
   // Track whether user was already logged in when the page mounted
   const [isReturningUser, setIsReturningUser] = useState(false);
 
@@ -45,21 +44,10 @@ export default function EntrancePage() {
     }
   };
 
-  // Subtle parallax effect for desktop
-  const handleMouseMove = (e) => {
-    if (window.innerWidth > 768) {
-      setMousePos({
-        x: (e.clientX / window.innerWidth - 0.5) * 20,
-        y: (e.clientY / window.innerHeight - 0.5) * 20,
-      });
-    }
-  };
-
   // We always render the splash — exiting state controls the fade-out for returning users
 
   return (
     <motion.div 
-      onMouseMove={handleMouseMove}
       initial={{ opacity: 1 }}
       animate={{ opacity: exiting ? 0 : 1 }}
       transition={{ duration: 0.6, ease: 'easeInOut' }}
@@ -73,48 +61,27 @@ export default function EntrancePage() {
         overflow: 'hidden',
       }}
     >
-      {/* High-Performance Moving Gradients Backdrop */}
+      {/* Static Gradient Backdrop — no blur filter, no JS animation */}
       <motion.div
-         initial={{ opacity: 0, scale: 1.1 }}
-         animate={{ opacity: 1, scale: 1 }}
+         initial={{ opacity: 0 }}
+         animate={{ opacity: 1 }}
          transition={{ duration: 1.5, ease: 'easeOut' }}
          style={{
            position: 'absolute',
-           inset: -100, // Oversize to allow panning
+           inset: -50,
            background: `
-             radial-gradient(circle at 20% 30%, rgba(30, 79, 175, 0.4) 0%, transparent 40%),
-             radial-gradient(circle at 80% 70%, rgba(217, 73, 0, 0.3) 0%, transparent 40%),
-             radial-gradient(circle at 50% 50%, rgba(11, 43, 107, 0.5) 0%, transparent 60%)
+             radial-gradient(ellipse at 20% 30%, rgba(30, 79, 175, 0.5) 0%, transparent 50%),
+             radial-gradient(ellipse at 80% 70%, rgba(217, 73, 0, 0.35) 0%, transparent 50%),
+             radial-gradient(ellipse at 50% 50%, rgba(11, 43, 107, 0.4) 0%, transparent 70%)
            `,
-           transform: `translate3d(${mousePos.x}px, ${mousePos.y}px, 0)`,
-           transition: 'transform 0.1s cubic-bezier(0.2, 0.8, 0.2, 1)',
-           filter: 'blur(40px)', 
            zIndex: 0
          }}
       />
 
-      {/* Abstract Animated Geometry (Replaces heavy SVG) */}
+      {/* Subtle ambient glow — pure CSS animation, no JS, GPU-composited */}
       <div style={{ position: 'absolute', inset: 0, pointerEvents: 'none', zIndex: 1, overflow: 'hidden' }}>
-        <motion.div
-           initial={{ y: '100vh', opacity: 0, rotate: -10 }}
-           animate={{ y: '-20vh', opacity: [0, 1, 0], rotate: 10 }}
-           transition={{ duration: 4, ease: 'easeInOut', repeat: Infinity, repeatDelay: 1 }}
-           style={{
-             position: 'absolute', left: '10%', width: 200, height: 600,
-             background: 'linear-gradient(180deg, rgba(30,79,175,0) 0%, rgba(30,79,175,0.1) 50%, rgba(30,79,175,0) 100%)',
-             transformOrigin: 'center', filter: 'blur(20px)', borderRadius: '100%'
-           }}
-        />
-        <motion.div
-           initial={{ y: '-100vh', opacity: 0, rotate: 10 }}
-           animate={{ y: '20vh', opacity: [0, 0.8, 0], rotate: -10 }}
-           transition={{ duration: 5, delay: 1, ease: 'easeInOut', repeat: Infinity, repeatDelay: 2 }}
-           style={{
-             position: 'absolute', right: '15%', width: 300, height: 800,
-             background: 'linear-gradient(180deg, rgba(217,73,0,0) 0%, rgba(217,73,0,0.1) 50%, rgba(217,73,0,0) 100%)',
-             transformOrigin: 'center', filter: 'blur(30px)', borderRadius: '100%'
-           }}
-        />
+        <div className="splash-orb splash-orb-blue" />
+        <div className="splash-orb splash-orb-orange" />
       </div>
 
       {/* Central Content (Logo + Login) */}
@@ -235,6 +202,35 @@ export default function EntrancePage() {
       <style>{`
         @keyframes spin {
           to { transform: rotate(360deg); }
+        }
+        .splash-orb {
+          position: absolute;
+          border-radius: 50%;
+          will-change: transform, opacity;
+        }
+        .splash-orb-blue {
+          left: 5%;
+          top: 20%;
+          width: 180px;
+          height: 180px;
+          background: radial-gradient(circle, rgba(30,79,175,0.25) 0%, transparent 70%);
+          animation: float-up 6s ease-in-out infinite;
+        }
+        .splash-orb-orange {
+          right: 10%;
+          bottom: 15%;
+          width: 220px;
+          height: 220px;
+          background: radial-gradient(circle, rgba(217,73,0,0.2) 0%, transparent 70%);
+          animation: float-down 7s ease-in-out 1s infinite;
+        }
+        @keyframes float-up {
+          0%, 100% { transform: translate3d(0, 0, 0); opacity: 0.4; }
+          50% { transform: translate3d(10px, -30px, 0); opacity: 0.8; }
+        }
+        @keyframes float-down {
+          0%, 100% { transform: translate3d(0, 0, 0); opacity: 0.3; }
+          50% { transform: translate3d(-10px, 20px, 0); opacity: 0.7; }
         }
       `}</style>
     </motion.div>
