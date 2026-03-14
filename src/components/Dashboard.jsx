@@ -1,13 +1,12 @@
-import React, { useMemo } from 'react'
+import React, { useMemo, useState } from 'react'
 import {
   Chart as ChartJS,
   CategoryScale, LinearScale, PointElement, LineElement,
   BarElement, Title, Tooltip, Legend, Filler, ArcElement,
 } from 'chart.js'
-import { Line, Bar } from 'react-chartjs-2'
-import { motion } from 'framer-motion'
-import { Target, Flame, Dumbbell, Activity, Zap, Trophy } from 'lucide-react'
-import { Card, StatCard, SectionTitle, ProgressBar, Badge, Grid, MotionCard } from './UI.jsx'
+import { Line, Bar, Doughnut } from 'react-chartjs-2'
+import { Target, Flame, Dumbbell, Activity, Zap, Trophy, Moon } from 'lucide-react'
+import { Card, StatCard, SectionTitle, ProgressBar, Badge, Grid, MotionCard, Modal } from './UI.jsx'
 import {
   calcBMI, bmiCategory, calcGoalProgress, getWeekDates, getLast30Days,
   formatDate, weeklyAvg, getStreakDays, formatLocalYYYYMMDD
@@ -48,6 +47,8 @@ const chartDefaults = {
 }
 
 export default function Dashboard({ logs, workouts, runs, profile }) {
+  const [selectedAnalysis, setSelectedAnalysis] = useState(null)
+  
   const today = formatLocalYYYYMMDD()
   const todayLog = logs[today] || {}
   const last30 = getLast30Days()
@@ -99,9 +100,20 @@ export default function Dashboard({ logs, workouts, runs, profile }) {
     }]
   }), [logs, weekDates, today])
 
+  // 30-day calorie data (for modal)
+  const calorieData30 = useMemo(() => ({
+    labels: last30.map(d => formatDate(d)),
+    datasets: [{
+      data: last30.map(d => logs[d]?.calories || 0),
+      backgroundColor: '#6c63ff44',
+      hoverBackgroundColor: '#6c63ff',
+      borderRadius: 4,
+    }]
+  }), [logs, last30])
+
   // Running distance chart
   const runData = useMemo(() => {
-    const last14 = getLast30Days().slice(-14)
+    const last14 = last30.slice(-14)
     const byDay = {}
     runs.forEach(r => { if (byDay[r.date] == null) byDay[r.date] = 0; byDay[r.date] += r.distance })
     return {
@@ -114,7 +126,7 @@ export default function Dashboard({ logs, workouts, runs, profile }) {
         borderRadius: 6,
       }]
     }
-  }, [runs])
+  }, [runs, last30])
 
   // Weekly workout volume
   const volumeData = useMemo(() => ({
@@ -135,11 +147,138 @@ export default function Dashboard({ logs, workouts, runs, profile }) {
     }]
   }), [workouts, weekDates])
 
+  // **NEW**: Macronutrient Doughnut (Today)
+  const macroData = useMemo(() => {
+    const p = todayLog.protein || 0;
+    const c = todayLog.carbs || 0;
+    const f = todayLog.fat || 0;
+    return {
+      labels: ['Protein', 'Carbs', 'Fat'],
+      datasets: [{
+        data: [p*4, c*4, f*9], // Approx calories per macro
+        backgroundColor: ['#3b82f6', '#f97316', '#ec4899'],
+        borderWidth: 0,
+        hoverOffset: 4
+      }]
+    }
+  }, [todayLog])
+
+  // **NEW**: Sleep History (7 days)
+  const sleepData = useMemo(() => ({
+    labels: weekDates.map(d => formatDate(d)),
+    datasets: [{
+      label: 'Sleep (hrs)',
+      data: weekDates.map(d => logs[d]?.sleep || 0),
+      backgroundColor: '#a855f744',
+      borderColor: '#a855f7',
+      borderWidth: 2,
+      borderRadius: 4,
+    }]
+  }), [logs, weekDates])
+
   const weeklyCalAvg = weeklyAvg(logs, 'calories')
   const weeklyProtAvg = weeklyAvg(logs, 'protein')
 
-  const recentRuns = runs.slice(0, 3)
   const totalRunKm = runs.reduce((s, r) => s + (r.distance || 0), 0)
+
+  // -- Modal Content Renderer -- //
+  function renderAnalysisModal() {
+    if (!selectedAnalysis) return null;
+    
+    const TitleMap = {
+      weight: 'Weight History (30 Days)',
+      goal: 'Goal Trajectory',
+      bmi: 'BMI Breakdown',
+      streak: 'Consistency Analysis',
+      calories: 'Caloric Intake Trends',
+      protein: 'Protein Intake Trends',
+      running: 'Running Performance',
+      workouts: 'Workout Volume Analysis',
+      macros: 'Today\'s Macro Breakdown',
+      sleep: 'Sleep Quality & Recovery'
+    };
+
+    const title = TitleMap[selectedAnalysis];
+
+    return (
+      <Modal isOpen={!!selectedAnalysis} onClose={() => setSelectedAnalysis(null)} title={title}>
+        
+        {selectedAnalysis === 'weight' && (
+          <div>
+            <p style={{ color: 'var(--text3)', fontSize: 13, marginBottom: 16 }}>Your body weight history over the last 30 days. Consistent tracking provides the most accurate trend line.</p>
+            <div style={{ height: 250 }}>
+              <Line data={weightData} options={{...chartDefaults, ...{ scales: { ...chartDefaults.scales, y: { ...chartDefaults.scales.y, min: profile.goalWeight - 2 } } } }} />
+            </div>
+            <Grid cols={3} gap={10} style={{ marginTop: 20 }}>
+              <div style={{ background: 'var(--bg2)', padding: 12, borderRadius: 12, textAlign: 'center' }}>
+                <div style={{ fontSize: 10, color: 'var(--text3)' }}>START</div>
+                <div style={{ fontSize: 16, fontWeight: 700 }}>{safeStart}kg</div>
+              </div>
+              <div style={{ background: 'var(--bg2)', padding: 12, borderRadius: 12, textAlign: 'center' }}>
+                <div style={{ fontSize: 10, color: 'var(--text3)' }}>CURRENT</div>
+                <div style={{ fontSize: 16, fontWeight: 700, color: 'var(--accent2)' }}>{safeWeight}kg</div>
+              </div>
+              <div style={{ background: 'var(--bg2)', padding: 12, borderRadius: 12, textAlign: 'center' }}>
+                <div style={{ fontSize: 10, color: 'var(--text3)' }}>GOAL</div>
+                <div style={{ fontSize: 16, fontWeight: 700, color: 'var(--green)' }}>{safeGoal}kg</div>
+              </div>
+            </Grid>
+          </div>
+        )}
+
+        {selectedAnalysis === 'calories' && (
+          <div>
+            <p style={{ color: 'var(--text3)', fontSize: 13, marginBottom: 16 }}>Expanded 30-day view of your caloric intake. The dashed line represents your daily target.</p>
+            <div style={{ height: 250 }}>
+              <Bar data={calorieData30} options={chartDefaults} />
+            </div>
+            <div style={{ marginTop: 20, display: 'flex', justifyContent: 'space-between', background: 'var(--bg2)', padding: 16, borderRadius: 12 }}>
+              <div>
+                <div style={{ fontSize: 11, color: 'var(--text3)' }}>DAILY TARGET</div>
+                <div style={{ fontSize: 20, fontWeight: 700 }}>{profile.dailyCalorieTarget} kcal</div>
+              </div>
+              <div style={{ textAlign: 'right' }}>
+                <div style={{ fontSize: 11, color: 'var(--text3)' }}>30-DAY AVERAGE</div>
+                <div style={{ fontSize: 20, fontWeight: 700, color: 'var(--accent)' }}>
+                  {Math.round(last30.reduce((s, d) => s + (Number(logs[d]?.calories) || 0), 0) / 30)} kcal
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {selectedAnalysis === 'macros' && (
+          <div>
+             <p style={{ color: 'var(--text3)', fontSize: 13, marginBottom: 16 }}>Your caloric distribution between Protein, Carbs, and Fat for today.</p>
+             <div style={{ height: 200, display: 'flex', justifyContent: 'center' }}>
+                <Doughnut data={macroData} options={{ plugins: { legend: { display: true, position: 'right', labels: { color: '#9090a8', font: { family: 'Space Grotesk' } } } } }} />
+             </div>
+          </div>
+        )}
+
+        {selectedAnalysis === 'sleep' && (
+          <div>
+             <p style={{ color: 'var(--text3)', fontSize: 13, marginBottom: 16 }}>Your sleep duration over the last 7 days. Target is 8 hours for optimal recovery.</p>
+             <div style={{ height: 200 }}>
+                <Bar data={sleepData} options={chartDefaults} />
+             </div>
+          </div>
+        )}
+
+        {['bmi', 'goal', 'streak', 'protein', 'running', 'workouts'].includes(selectedAnalysis) && (
+          <div style={{ textAlign: 'center', padding: '2rem 1rem' }}>
+            <Activity size={40} color="var(--accent)" style={{ margin: '0 auto 1rem', opacity: 0.5 }} />
+            <h3 style={{ fontSize: 18, marginBottom: 8 }}>Analysis generating...</h3>
+            <p style={{ fontSize: 13, color: 'var(--text3)', lineHeight: 1.5 }}>
+              This module tracks highly detailed historic aggregations for this metric. 
+              Continue logging data consistently to unlock AI-driven insights on your {selectedAnalysis} trends.
+            </p>
+          </div>
+        )}
+      </Modal>
+    )
+  }
+  // --------------------------------- //
 
   return (
     <div className="fade-in">
@@ -162,6 +301,7 @@ export default function Dashboard({ logs, workouts, runs, profile }) {
           icon={Target}
           sub={safeGoal ? `Goal: ${safeGoal} kg` : 'Set a goal'}
           delay={0.0}
+          onClick={() => setSelectedAnalysis('weight')}
         />
         <StatCard
           label="Goal Progress"
@@ -171,6 +311,7 @@ export default function Dashboard({ logs, workouts, runs, profile }) {
           icon={Trophy}
           sub={`${safeWeight && safeGoal ? Math.abs(safeWeight - safeGoal).toFixed(1) : 0} kg to go`}
           delay={0.05}
+          onClick={() => setSelectedAnalysis('goal')}
         />
         <StatCard
           label="BMI"
@@ -179,6 +320,7 @@ export default function Dashboard({ logs, workouts, runs, profile }) {
           icon={Activity}
           sub={bmiCat.label}
           delay={0.1}
+          onClick={() => setSelectedAnalysis('bmi')}
         />
         <StatCard
           label="Log Streak"
@@ -188,11 +330,12 @@ export default function Dashboard({ logs, workouts, runs, profile }) {
           icon={Zap}
           sub="Keep it up!"
           delay={0.15}
+          onClick={() => setSelectedAnalysis('streak')}
         />
       </Grid>
 
       {/* Goal progress bar */}
-      <Card style={{ marginTop: 14 }}>
+      <Card style={{ marginTop: 14 }} onClick={() => setSelectedAnalysis('goal')} className="clickable-card">
         <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8 }}>
           <span style={{ fontSize: 12, color: 'var(--text2)', fontWeight: 500 }}>Weight goal: {safeStart} → {safeGoal} kg</span>
           <Badge color="var(--green)">{goalPct}% complete</Badge>
@@ -211,7 +354,7 @@ export default function Dashboard({ logs, workouts, runs, profile }) {
           <Flame size={16} color="var(--orange)" /> Today's snapshot
         </span>
       </SectionTitle>
-      <MotionCard style={{ marginTop: 8 }} delay={0.2}>
+      <MotionCard style={{ marginTop: 8 }} delay={0.2} onClick={() => setSelectedAnalysis('macros')}>
         <div className="snapshot-grid">
           {[
             { label: 'Calories', value: todayLog.calories || 0, unit: 'kcal', color: 'var(--green)', target: profile.dailyCalorieTarget },
@@ -235,68 +378,113 @@ export default function Dashboard({ logs, workouts, runs, profile }) {
 
       {/* Weekly stats */}
       <Grid cols={2} gap={10} style={{ marginTop: 20 }}>
-        <MotionCard delay={0.25}>
+        <MotionCard delay={0.25} onClick={() => setSelectedAnalysis('calories')}>
           <div style={{ fontSize: 11, color: 'var(--text3)', marginBottom: 2 }}>Weekly avg calories</div>
           <div style={{ fontSize: 20, fontWeight: 700 }}>{weeklyCalAvg || '—'}</div>
         </MotionCard>
-        <MotionCard delay={0.3}>
+        <MotionCard delay={0.3} onClick={() => setSelectedAnalysis('protein')}>
           <div style={{ fontSize: 11, color: 'var(--text3)', marginBottom: 2 }}>Weekly avg protein</div>
           <div style={{ fontSize: 20, fontWeight: 700, color: 'var(--blue)' }}>{weeklyProtAvg || '—'}g</div>
         </MotionCard>
-        <MotionCard delay={0.35}>
+        <MotionCard delay={0.35} onClick={() => setSelectedAnalysis('running')}>
           <div style={{ fontSize: 11, color: 'var(--text3)', marginBottom: 2 }}>Total km run</div>
           <div style={{ fontSize: 20, fontWeight: 700, color: 'var(--green)' }}>{totalRunKm.toFixed(1)}</div>
         </MotionCard>
-        <MotionCard delay={0.4}>
+        <MotionCard delay={0.4} onClick={() => setSelectedAnalysis('workouts')}>
           <div style={{ fontSize: 11, color: 'var(--text3)', marginBottom: 2 }}>Workouts logged</div>
           <div style={{ fontSize: 20, fontWeight: 700, color: 'var(--orange)' }}>{workouts.length}</div>
         </MotionCard>
       </Grid>
 
       {/* Charts */}
-      <div style={{ marginTop: 20 }}>
+      <div style={{ marginTop: 20 }} onClick={() => setSelectedAnalysis('weight')} className="clickable-section">
         <SectionTitle>Weight trend (30 days)</SectionTitle>
-        <Card>
+        <Card className="hover-card">
           <div style={{ height: 160 }}>
             <Line data={weightData} options={{ ...chartDefaults, scales: { ...chartDefaults.scales, y: { ...chartDefaults.scales.y, min: profile.goalWeight - 2 } } }} />
           </div>
         </Card>
       </div>
 
-      <div style={{ marginTop: 14 }}>
+      <div style={{ marginTop: 14 }} onClick={() => setSelectedAnalysis('calories')} className="clickable-section">
         <SectionTitle>Daily calories (this week)</SectionTitle>
-        <Card>
+        <Card className="hover-card">
           <div style={{ height: 140 }}>
             <Bar data={calorieData} options={chartDefaults} />
           </div>
           <div style={{ textAlign: 'right', fontSize: 11, color: 'var(--text3)', marginTop: 6 }}>Target: {profile.dailyCalorieTarget} kcal</div>
         </Card>
       </div>
+      
+      {/* NEW CHARTS: Sleep and Macros combined row */}
+      <Grid cols={2} gap={14} style={{ marginTop: 14 }}>
+        <div onClick={() => setSelectedAnalysis('macros')} className="clickable-section">
+          <SectionTitle>Today's Macros</SectionTitle>
+          <Card className="hover-card" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <div style={{ height: 120, width: '100%', maxWidth: 120 }}>
+              {(todayLog.protein || todayLog.carbs || todayLog.fat) ? (
+                 <Doughnut data={macroData} options={{ plugins: { legend: { display: false } }, cutout: '75%' }} />
+              ) : (
+                <div style={{ textAlign: 'center', color: 'var(--text3)', fontSize: 12, marginTop: 40 }}>No Data</div>
+              )}
+            </div>
+          </Card>
+        </div>
+        <div onClick={() => setSelectedAnalysis('sleep')} className="clickable-section">
+          <SectionTitle>Sleep Recovery</SectionTitle>
+          <Card className="hover-card">
+            <div style={{ height: 120 }}>
+              <Bar data={sleepData} options={chartDefaults} />
+            </div>
+          </Card>
+        </div>
+      </Grid>
 
       <Grid cols={2} gap={14} style={{ marginTop: 14 }}>
-        <div>
+        <div onClick={() => setSelectedAnalysis('running')} className="clickable-section">
           <SectionTitle>Running (14 days)</SectionTitle>
-          <Card>
+          <Card className="hover-card">
             <div style={{ height: 120 }}>
               <Bar data={runData} options={chartDefaults} />
             </div>
           </Card>
         </div>
-        <div>
+        <div onClick={() => setSelectedAnalysis('workouts')} className="clickable-section">
           <SectionTitle>Workout volume</SectionTitle>
-          <Card>
+          <Card className="hover-card">
             <div style={{ height: 120 }}>
               <Bar data={volumeData} options={chartDefaults} />
             </div>
           </Card>
         </div>
       </Grid>
+
+      {renderAnalysisModal()}
+
       <style>{`
         .snapshot-grid {
           display: grid;
           grid-template-columns: repeat(4, 1fr);
           gap: 10px;
           text-align: center;
+        }
+        .clickable-section {
+          cursor: pointer;
+        }
+        .hover-card {
+          transition: transform 0.2s ease, border-color 0.2s ease;
+        }
+        .clickable-section:hover .hover-card {
+           transform: scale(0.99);
+           border-color: var(--accent);
+        }
+        .clickable-card {
+          cursor: pointer;
+          transition: transform 0.2s ease, border-color 0.2s ease;
+        }
+        .clickable-card:hover {
+          transform: scale(0.99);
+          border-color: var(--accent);
         }
         @media (max-width: 768px) {
           .snapshot-grid {

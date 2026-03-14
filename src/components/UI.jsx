@@ -1,5 +1,47 @@
 import React from 'react'
-import { motion } from 'framer-motion'
+import { motion, AnimatePresence } from 'framer-motion'
+import { X } from 'lucide-react'
+
+export function Modal({ isOpen, onClose, title, children }) {
+  return (
+    <AnimatePresence>
+      {isOpen && (
+        <div style={{
+          position: 'fixed', inset: 0, zIndex: 100,
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          padding: '1rem'
+        }}>
+          <motion.div
+            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+            onClick={onClose}
+            style={{
+              position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(4px)'
+            }}
+          />
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95, y: 20 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 0.95, y: 20 }}
+            style={{
+              position: 'relative', width: '100%', maxWidth: 500,
+              background: 'var(--bg)', border: '1px solid var(--border)',
+              borderRadius: 16, padding: '1.5rem', boxShadow: '0 20px 40px rgba(0,0,0,0.4)',
+              maxHeight: '90vh', overflowY: 'auto'
+            }}
+          >
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+              <h2 style={{ fontSize: 18, fontWeight: 700 }}>{title}</h2>
+              <button onClick={onClose} style={{ background: 'var(--bg3)', border: 'none', borderRadius: '50%', padding: 6, cursor: 'pointer', color: 'var(--text)' }}>
+                <X size={18} />
+              </button>
+            </div>
+            {children}
+          </motion.div>
+        </div>
+      )}
+    </AnimatePresence>
+  )
+}
 export function Card({ children, className = '', style = {}, onClick }) {
   return (
     <div
