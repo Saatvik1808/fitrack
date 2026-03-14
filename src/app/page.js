@@ -99,20 +99,28 @@ export default function EntrancePage() {
               <stop offset="100%" stopColor="#D94900" />
             </linearGradient>
 
+            {/* Organic Liquid Filter using Perlin Noise */}
+            <filter id="liquidNoise">
+              <feTurbulence type="fractalNoise" baseFrequency="0.015 0.02" numOctaves="3" result="noise">
+                <animate attributeName="baseFrequency" values="0.015 0.02; 0.025 0.04; 0.015 0.02" dur="5s" repeatCount="indefinite" />
+              </feTurbulence>
+              <feDisplacementMap in="SourceGraphic" in2="noise" scale="50" xChannelSelector="R" yChannelSelector="G" />
+            </filter>
+
             <clipPath id="splitClip" clipPathUnits="objectBoundingBox">
               <motion.rect
                 x="-1"
                 y="-1"
                 width="3"
                 height="3"
-                initial={{ rotate: -25, y: -2 }}
+                initial={{ rotate: -35, y: -2 }}
                 animate={{
-                  rotate: [ -25, 180 ],
+                  rotate: [ -35, 180 ],
                   y: [ -2, 0.5 ]
                 }}
                 transition={{
-                  duration: 2.8,
-                  ease: [0.25, 1, 0.5, 1]
+                  duration: 3.2,
+                  ease: [0.16, 1, 0.3, 1] // Super snappy dramatic expoOut
                 }}
                 style={{ transformOrigin: '0.5 0.5' }}
               />
@@ -122,24 +130,27 @@ export default function EntrancePage() {
           {/* Base Bottom Layer: Orange */}
           <rect width="100%" height="100%" fill="url(#orangeGrad)" />
           
-          {/* Top Layer: Blue, clipped by the rotating rect */}
+          {/* Top Layer: Blue, clipped by the rotating rect and distorted to look like liquid */}
           <rect
-            width="100%"
-            height="100%"
+            width="120%"
+            height="120%"
+            x="-10%"
+            y="-10%"
             fill="url(#blueGrad)"
             clipPath="url(#splitClip)"
+            filter="url(#liquidNoise)"
           />
         </svg>
       </div>
 
       {/* Rotating Divider Line */}
       <motion.div
-        initial={{ rotate: -25, scaleY: 0, opacity: 0 }}
-        animate={{ rotate: 180, scaleY: 1, opacity: [0, 1, 1, showButton ? 0 : 1] }}
+        initial={{ rotate: -35, scaleY: 0, opacity: 0 }}
+        animate={{ rotate: 180, scaleY: [0, 1.2, 1], opacity: [0, 1, 1, showButton ? 0 : 1] }}
         transition={{
-            rotate: { duration: 2.8, ease: [0.25, 1, 0.5, 1] },
-            scaleY: { duration: 0.6, ease: 'easeOut' },
-            opacity: { times: [0, 0.1, 0.8, 1], duration: 2.8 }
+            rotate: { duration: 3.2, ease: [0.16, 1, 0.3, 1] },
+            scaleY: { duration: 0.8, ease: 'easeOut' },
+            opacity: { times: [0, 0.1, 0.8, 1], duration: 3.2 }
         }}
         style={{
           position: 'absolute',
@@ -155,14 +166,17 @@ export default function EntrancePage() {
       {/* Central Content (Logo + Login) */}
       <div style={{ position: 'relative', zIndex: 10, display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
         <motion.div
-           initial={{ opacity: 0, scale: 0.95, y: 0 }}
+           initial={{ opacity: 0, scale: 0.9, y: 0, filter: 'blur(8px)' }}
            animate={{ 
              opacity: 1, 
              scale: 1, 
-             y: showButton ? -40 : 0 // Slide up slightly when button appears
+             y: showButton ? -40 : 0, // Slide up slightly when button appears
+             filter: 'blur(0px)'
            }}
            transition={{ 
-             opacity: { duration: 1, delay: 0.2, ease: "easeOut" },
+             opacity: { duration: 1.2, delay: 0.3, ease: "easeOut" },
+             scale: { duration: 2, delay: 0.3, ease: [0.16, 1, 0.3, 1] },
+             filter: { duration: 1.2, delay: 0.3, ease: "easeOut" },
              y: { duration: 0.8, ease: [0.25, 1, 0.5, 1] }
            }}
            style={{

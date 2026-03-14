@@ -39,11 +39,33 @@ export default function DashboardPage() {
 
   function handleAddFoodToLog(nutrition) {
     const todayLog = getTodayLog()
+    const currentMeals = todayLog.meals || []
+    
+    const newMeal = {
+      id: Date.now(),
+      name: nutrition.foodName || 'AI Logged Food',
+      calories: nutrition.calories || 0,
+      protein: nutrition.protein || 0,
+      carbs: nutrition.carbs || 0,
+      fat: nutrition.fat || 0,
+    }
+    
+    const updatedMeals = [...currentMeals, newMeal]
+    
+    // Auto-calculate totals from meal list
+    const totals = updatedMeals.reduce((acc, m) => ({
+      calories: acc.calories + (Number(m.calories) || 0),
+      protein: acc.protein + (Number(m.protein) || 0),
+      carbs: acc.carbs + (Number(m.carbs) || 0),
+      fat: acc.fat + (Number(m.fat) || 0),
+    }), { calories: 0, protein: 0, carbs: 0, fat: 0 })
+
     setLog(today, {
-      calories: (Number(todayLog.calories) || 0) + Number(nutrition.calories || 0),
-      protein: (Number(todayLog.protein) || 0) + Number(nutrition.protein || 0),
-      carbs: (Number(todayLog.carbs) || 0) + Number(nutrition.carbs || 0),
-      fat: (Number(todayLog.fat) || 0) + Number(nutrition.fat || 0),
+      meals: updatedMeals,
+      calories: totals.calories || '',
+      protein: totals.protein || '',
+      carbs: totals.carbs || '',
+      fat: totals.fat || '',
     })
     setPage('log')
   }
