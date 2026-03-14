@@ -8,35 +8,58 @@ export function Modal({ isOpen, onClose, title, children }) {
       {isOpen && (
         <div style={{
           position: 'fixed', inset: 0, zIndex: 100,
-          display: 'flex', alignItems: 'center', justifyContent: 'center',
-          padding: '1rem'
+          display: 'flex', alignItems: 'flex-end', justifyContent: 'center',
         }}>
           <motion.div
             initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
             onClick={onClose}
             style={{
-              position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(4px)'
+              position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.6)',
             }}
           />
           <motion.div
-            initial={{ opacity: 0, scale: 0.95, y: 20 }}
-            animate={{ opacity: 1, scale: 1, y: 0 }}
-            exit={{ opacity: 0, scale: 0.95, y: 20 }}
-            style={{
-              position: 'relative', width: '100%', maxWidth: 500,
-              background: 'var(--bg)', border: '1px solid var(--border)',
-              borderRadius: 16, padding: '1.5rem', boxShadow: '0 20px 40px rgba(0,0,0,0.4)',
-              maxHeight: '90vh', overflowY: 'auto'
-            }}
+            initial={{ opacity: 0, y: '100%' }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: '100%' }}
+            transition={{ type: 'spring', damping: 30, stiffness: 350 }}
+            className="modal-content-panel"
           >
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
-              <h2 style={{ fontSize: 18, fontWeight: 700 }}>{title}</h2>
+            {/* Drag handle for mobile */}
+            <div style={{ display: 'flex', justifyContent: 'center', paddingTop: 8, paddingBottom: 4 }}>
+              <div style={{ width: 36, height: 4, borderRadius: 100, background: 'var(--text3)', opacity: 0.3 }} />
+            </div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.75rem', padding: '0 1.25rem' }}>
+              <h2 style={{ fontSize: 17, fontWeight: 700 }}>{title}</h2>
               <button onClick={onClose} style={{ background: 'var(--bg3)', border: 'none', borderRadius: '50%', padding: 6, cursor: 'pointer', color: 'var(--text)' }}>
                 <X size={18} />
               </button>
             </div>
-            {children}
+            <div style={{ padding: '0 1.25rem 1.25rem', overflowY: 'auto', maxHeight: 'calc(85vh - 60px)', WebkitOverflowScrolling: 'touch' }}>
+              {children}
+            </div>
           </motion.div>
+          <style>{`
+            .modal-content-panel {
+              position: relative;
+              width: 100%;
+              max-width: 100%;
+              background: var(--bg);
+              border: 1px solid var(--border);
+              border-bottom: none;
+              border-radius: 20px 20px 0 0;
+              box-shadow: 0 -10px 40px rgba(0,0,0,0.4);
+              max-height: 85vh;
+              overflow: hidden;
+            }
+            @media (min-width: 600px) {
+              .modal-content-panel {
+                max-width: 480px;
+                border-radius: 16px;
+                border-bottom: 1px solid var(--border);
+                margin-bottom: 5vh;
+              }
+            }
+          `}</style>
         </div>
       )}
     </AnimatePresence>

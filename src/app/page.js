@@ -11,27 +11,31 @@ export default function EntrancePage() {
   
   // States for animation sequencing
   const [showButton, setShowButton] = useState(false);
+  const [exiting, setExiting] = useState(false);
   const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
+  // Track whether user was already logged in when the page mounted
+  const [isReturningUser, setIsReturningUser] = useState(false);
 
   useEffect(() => {
-    let timer;
     if (!loading && user) {
-      // Force a 2 second delay so the entrance animation plays out
-      // even if the user is already authenticated via Firebase cache
-      timer = setTimeout(() => {
-        router.push('/dashboard');
-      }, 2000);
+      // Mark as returning user so we never show the Google button
+      setIsReturningUser(true);
+      // Play a smooth fade-out, then redirect
+      const fadeTimer = setTimeout(() => setExiting(true), 1500);
+      const navTimer = setTimeout(() => router.push('/dashboard'), 2200);
+      return () => { clearTimeout(fadeTimer); clearTimeout(navTimer); };
     }
-    return () => clearTimeout(timer);
   }, [user, loading, router]);
 
   useEffect(() => {
-    // Show login button quickly after text fades in (~1 second)
+    // Show login button quickly — but ONLY for unauthenticated users
     const timer = setTimeout(() => {
-      setShowButton(true);
+      if (!user && !loading) {
+        setShowButton(true);
+      }
     }, 1200);
     return () => clearTimeout(timer);
-  }, []);
+  }, [user, loading]);
 
   const handleLogin = async () => {
     try {
@@ -51,13 +55,14 @@ export default function EntrancePage() {
     }
   };
 
-  // Do NOT return null here anymore. 
-  // We want the splash rendering to happen for 2 seconds even if they are logged in.
-  // if (user && !loading) return null;
+  // We always render the splash — exiting state controls the fade-out for returning users
 
   return (
-    <div 
+    <motion.div 
       onMouseMove={handleMouseMove}
+      initial={{ opacity: 1 }}
+      animate={{ opacity: exiting ? 0 : 1 }}
+      transition={{ duration: 0.6, ease: 'easeInOut' }}
       style={{
         position: 'fixed',
         inset: 0,
@@ -66,7 +71,6 @@ export default function EntrancePage() {
         alignItems: 'center',
         justifyContent: 'center',
         overflow: 'hidden',
-        perspective: '1000px'
       }}
     >
       {/* High-Performance Moving Gradients Backdrop */}
@@ -162,7 +166,7 @@ export default function EntrancePage() {
         </motion.div>
 
         <AnimatePresence>
-          {showButton && (
+          {showButton && !isReturningUser && (
             <motion.div
               initial={{ opacity: 0, y: 20, scale: 0.95 }}
               animate={{ opacity: 1, y: 0, scale: 1 }}
@@ -173,42 +177,22 @@ export default function EntrancePage() {
                 onClick={handleLogin}
                 disabled={loading}
                 style={{
-                  background: 'rgba(255, 255, 255, 0.05)',
-                  backdropFilter: 'blur(20px)',
-                  WebkitBackdropFilter: 'blur(20px)',
-                  border: '1px solid rgba(255, 255, 255, 0.1)',
+                  background: 'rgba(255, 255, 255, 0.08)',
+                  border: '1px solid rgba(255, 255, 255, 0.15)',
                   color: '#fff',
-                  borderRadius: 100, // Pill shaped button for modern feel
+                  borderRadius: 100,
                   padding: '16px 32px',
                   fontSize: 16,
                   fontWeight: 600,
                   cursor: loading ? 'wait' : 'pointer',
                   fontFamily: 'inherit',
                   width: '100%',
-                  boxShadow: '0 8px 32px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.1)',
+                  boxShadow: '0 8px 32px rgba(0,0,0,0.3)',
                   transition: 'all 0.2s ease',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
                   gap: 12
-                }}
-                onMouseOver={(e) => {
-                  if (!loading) {
-                    e.currentTarget.style.background = 'rgba(255, 255, 255, 0.1)';
-                    e.currentTarget.style.transform = 'translateY(-2px)';
-                  }
-                }}
-                onMouseOut={(e) => {
-                  if (!loading) {
-                    e.currentTarget.style.background = 'rgba(255, 255, 255, 0.05)';
-                    e.currentTarget.style.transform = 'translateY(0)';
-                  }
-                }}
-                onMouseDown={(e) => {
-                  if (!loading) e.currentTarget.style.transform = 'translateY(1px)';
-                }}
-                onMouseUp={(e) => {
-                  if (!loading) e.currentTarget.style.transform = 'translateY(-2px)';
                 }}
               >
                 {loading ? (
@@ -253,6 +237,6 @@ export default function EntrancePage() {
           to { transform: rotate(360deg); }
         }
       `}</style>
-    </div>
+    </motion.div>
   );
 }
