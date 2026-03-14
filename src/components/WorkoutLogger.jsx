@@ -1,6 +1,7 @@
 import React, { useState } from 'react'
+import { motion, AnimatePresence } from 'framer-motion'
 import { Plus, Trash2, ChevronDown, ChevronUp, Dumbbell, Clock } from 'lucide-react'
-import { Card, Btn, InputRow, SectionTitle, EmptyState, Badge } from './UI.jsx'
+import { Card, Btn, InputRow, SectionTitle, EmptyState, Badge, Grid, MotionCard } from './UI.jsx'
 import { calcWorkoutVolume, formatDate } from '../utils/calculations.js'
 
 const COMMON_EXERCISES = [
@@ -162,9 +163,15 @@ export default function WorkoutLogger({ workouts, addWorkout, deleteWorkout }) {
       </div>
 
       {showForm && (
+        <motion.div
+          initial={{ opacity: 0, height: 0 }}
+          animate={{ opacity: 1, height: 'auto' }}
+          exit={{ opacity: 0, height: 0 }}
+          style={{ overflow: 'hidden' }}
+        >
         <Card style={{ marginBottom: 16 }} className="fade-in">
           <SectionTitle>New Workout</SectionTitle>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginBottom: 10 }}>
+          <Grid cols={2} gap={10} style={{ marginBottom: 10 }}>
             <InputRow label="Workout Name">
               <input placeholder="Push Day, Legs, etc." value={form.name} onChange={e => setForm(p => ({ ...p, name: e.target.value }))} />
             </InputRow>
@@ -180,7 +187,7 @@ export default function WorkoutLogger({ workouts, addWorkout, deleteWorkout }) {
             <InputRow label="Duration" hint="minutes">
               <input type="number" placeholder="60" value={form.duration} onChange={e => setForm(p => ({ ...p, duration: e.target.value }))} />
             </InputRow>
-          </div>
+          </Grid>
 
           <div style={{ marginBottom: 12 }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
@@ -225,6 +232,7 @@ export default function WorkoutLogger({ workouts, addWorkout, deleteWorkout }) {
             <Dumbbell size={14} /> Save Workout
           </Btn>
         </Card>
+        </motion.div>
       )}
 
       {/* Recent workouts */}
@@ -232,8 +240,8 @@ export default function WorkoutLogger({ workouts, addWorkout, deleteWorkout }) {
       {recentWorkouts.length === 0 && (
         <EmptyState icon={Dumbbell} title="No workouts logged yet" sub="Hit the button above to log your first session" />
       )}
-      {recentWorkouts.map(w => (
-        <Card key={w.id} style={{ marginBottom: 10 }}>
+      {recentWorkouts.map((w, i) => (
+        <MotionCard key={w.id} style={{ marginBottom: 10 }} delay={i * 0.05}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
             <div>
               <div style={{ fontWeight: 600, fontSize: 15 }}>{w.name || 'Workout'}</div>
@@ -271,7 +279,7 @@ export default function WorkoutLogger({ workouts, addWorkout, deleteWorkout }) {
               {w.exercises.length > 5 && <Badge color="var(--bg4)">+{w.exercises.length - 5} more</Badge>}
             </div>
           )}
-        </Card>
+        </MotionCard>
       ))}
     </div>
   )

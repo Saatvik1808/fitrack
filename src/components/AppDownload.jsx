@@ -1,6 +1,7 @@
 import React, { useState } from 'react'
-import { Smartphone, Apple, QrCode, Wifi, Zap, Shield, Star, ChevronRight, Download, CheckCircle } from 'lucide-react'
-import { Card, SectionTitle } from './UI.jsx'
+import { motion } from 'framer-motion'
+import { Smartphone, Apple, QrCode, Wifi, Zap, Shield, Star, ChevronRight, Download, CheckCircle, Apple as AppleIcon, MonitorPlay, Zap as ZapIcon } from 'lucide-react'
+import { Card, SectionTitle, MotionCard } from './UI.jsx'
 
 const FEATURES = [
   { icon: Wifi, label: 'Works Offline', sub: 'No internet needed after install', color: 'var(--blue)' },
@@ -11,16 +12,16 @@ const FEATURES = [
 
 const IOS_STEPS = [
   'Open FitTrack in Safari browser',
-  'Tap the Share button (□↑) at the bottom',
+  'Tap the Share button at the bottom',
   'Scroll down and tap "Add to Home Screen"',
-  'Tap "Add" — done! 🎉',
+  'Tap "Add" — done!',
 ]
 
 const ANDROID_STEPS = [
   'Open FitTrack in Chrome browser',
-  'Tap the three-dot menu (⋮) in the top right',
+  'Tap the three-dot menu in the top right',
   'Tap "Add to Home Screen" or "Install App"',
-  'Tap "Install" — done! 🎉',
+  'Tap "Install" — done!',
 ]
 
 function StoreButton({ platform, icon: Icon, bgColor, textColor = '#fff', label, sublabel }) {
@@ -82,7 +83,11 @@ export default function AppDownload() {
   return (
     <div className="fade-in">
       {/* Hero */}
-      <div style={{
+      <motion.div
+        initial={{ opacity: 0, scale: 0.95 }}
+        animate={{ opacity: 1, scale: 1 }}
+        transition={{ duration: 0.4 }}
+        style={{
         background: 'linear-gradient(135deg, var(--accent)22 0%, var(--bg2) 60%)',
         borderRadius: 20,
         padding: '2rem 1.5rem',
@@ -125,15 +130,15 @@ export default function AppDownload() {
           />
         </div>
 
-        <p style={{ fontSize: 11, color: 'var(--text3)', marginTop: 10 }}>
-          ⚡ Or install instantly as a PWA — faster than any app store
+        <p style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, fontSize: 11, color: 'var(--text3)', marginTop: 10 }}>
+          <ZapIcon size={12} style={{ color: 'var(--yellow)' }} /> Or install instantly as a PWA — faster than any app store
         </p>
-      </div>
+      </motion.div>
 
       {/* Feature highlights */}
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginBottom: 16 }}>
-        {FEATURES.map(({ icon: Icon, label, sub, color }) => (
-          <Card key={label} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '0.9rem 1rem' }}>
+        {FEATURES.map(({ icon: Icon, label, sub, color }, i) => (
+          <MotionCard key={label} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '0.9rem 1rem' }} delay={0.1 + (i * 0.05)}>
             <div style={{
               width: 36, height: 36,
               background: color + '18',
@@ -147,24 +152,25 @@ export default function AppDownload() {
               <div style={{ fontSize: 12, fontWeight: 600, marginBottom: 2 }}>{label}</div>
               <div style={{ fontSize: 11, color: 'var(--text3)' }}>{sub}</div>
             </div>
-          </Card>
+          </MotionCard>
         ))}
       </div>
 
       {/* Install instructions */}
-      <Card style={{ marginBottom: 16 }}>
+      <MotionCard style={{ marginBottom: 16 }} delay={0.3}>
         <SectionTitle>How to Install</SectionTitle>
 
         {/* Tab switcher */}
         <div style={{ display: 'flex', background: 'var(--bg3)', borderRadius: 10, padding: 3, marginBottom: 16, gap: 3 }}>
           {[
-            { id: 'ios', label: '🍎 iOS / Safari' },
-            { id: 'android', label: '🤖 Android / Chrome' },
+            { id: 'ios', label: 'iOS / Safari', icon: AppleIcon },
+            { id: 'android', label: 'Android / Chrome', icon: Smartphone },
           ].map(tab => (
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}
               style={{
+                display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
                 flex: 1,
                 padding: '8px 12px',
                 borderRadius: 8,
@@ -179,7 +185,7 @@ export default function AppDownload() {
                 boxShadow: activeTab === tab.id ? '0 1px 4px rgba(0,0,0,0.3)' : 'none',
               }}
             >
-              {tab.label}
+              <tab.icon size={14} /> {tab.label}
             </button>
           ))}
         </div>
@@ -205,10 +211,10 @@ export default function AppDownload() {
           <CheckCircle size={14} color="var(--green)" />
           After installing, FitTrack will appear on your home screen and launch in full-screen mode.
         </div>
-      </Card>
+      </MotionCard>
 
       {/* QR Code card */}
-      <Card style={{ textAlign: 'center', marginBottom: 14 }}>
+      <MotionCard style={{ textAlign: 'center', marginBottom: 14 }} delay={0.4}>
         <SectionTitle>Scan to Open on Mobile</SectionTitle>
         <div style={{
           width: 120, height: 120,
@@ -228,15 +234,15 @@ export default function AppDownload() {
         <div style={{ fontSize: 12, color: 'var(--text2)' }}>
           Point your phone camera at the QR code to open FitTrack instantly
         </div>
-      </Card>
+      </MotionCard>
 
       {/* Bottom note */}
-      <Card style={{ background: 'var(--bg3)', textAlign: 'center', border: 'none' }}>
+      <MotionCard style={{ background: 'var(--bg3)', textAlign: 'center', border: 'none' }} delay={0.5}>
         <div style={{ fontSize: 11, color: 'var(--text3)', lineHeight: 1.7 }}>
           FitTrack is a <strong style={{ color: 'var(--text2)' }}>Progressive Web App (PWA)</strong><br />
           No App Store approval needed · Always up-to-date · 100% free
         </div>
-      </Card>
+      </MotionCard>
     </div>
   )
 }

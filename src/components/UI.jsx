@@ -1,5 +1,5 @@
 import React from 'react'
-
+import { motion } from 'framer-motion'
 export function Card({ children, className = '', style = {}, onClick }) {
   return (
     <div
@@ -18,9 +18,32 @@ export function Card({ children, className = '', style = {}, onClick }) {
   )
 }
 
-export function StatCard({ label, value, unit, sub, color = 'var(--accent)', icon: Icon, onClick }) {
+export function MotionCard({ children, className = '', style = {}, onClick, delay = 0 }) {
   return (
-    <Card onClick={onClick} style={{ cursor: onClick ? 'pointer' : 'default' }}>
+    <motion.div
+      initial={{ opacity: 0, y: 10 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.3, delay, ease: 'easeOut' }}
+      whileHover={onClick ? { scale: 0.99 } : {}}
+      onClick={onClick}
+      style={{
+        background: 'var(--bg2)',
+        border: '1px solid var(--border)',
+        borderRadius: 'var(--radius)',
+        padding: '1.25rem',
+        cursor: onClick ? 'pointer' : 'default',
+        ...style,
+      }}
+      className={className}
+    >
+      {children}
+    </motion.div>
+  )
+}
+
+export function StatCard({ label, value, unit, sub, color = 'var(--accent)', icon: Icon, onClick, delay = 0 }) {
+  return (
+    <MotionCard onClick={onClick} delay={delay}>
       <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between' }}>
         <div>
           <div style={{ fontSize: 11, color: 'var(--text2)', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 6 }}>{label}</div>
@@ -41,7 +64,7 @@ export function StatCard({ label, value, unit, sub, color = 'var(--accent)', ico
           </div>
         )}
       </div>
-    </Card>
+    </MotionCard>
   )
 }
 
@@ -104,31 +127,45 @@ export function InputRow({ label, children, hint }) {
   )
 }
 
-export function Grid({ children, cols = 2, gap = 12 }) {
+export function Grid({ children, cols = 2, gap = 12, style = {}, className = '' }) {
   return (
-    <div style={{
-      display: 'grid',
-      gridTemplateColumns: `repeat(${cols}, 1fr)`,
-      gap,
-    }}>
-      {children}
-    </div>
+    <>
+      <div className={`grid-layout ${className}`} style={{ gap, ...style }}>
+        {children}
+      </div>
+      <style>{`
+        .grid-layout {
+          display: grid;
+          grid-template-columns: repeat(${cols}, 1fr);
+        }
+        @media (max-width: 768px) {
+          .grid-layout {
+            grid-template-columns: 1fr !important;
+          }
+        }
+      `}</style>
+    </>
   )
 }
 
 export function Badge({ children, color = 'var(--accent)' }) {
   return (
-    <span style={{
-      background: color + '22',
-      color,
-      fontSize: 11,
-      fontWeight: 600,
-      padding: '3px 8px',
-      borderRadius: 100,
-      letterSpacing: '0.03em',
-    }}>
+    <motion.span
+      initial={{ scale: 0.9, opacity: 0 }}
+      animate={{ scale: 1, opacity: 1 }}
+      style={{
+        background: color + '22',
+        color,
+        fontSize: 11,
+        fontWeight: 600,
+        padding: '3px 8px',
+        borderRadius: 100,
+        letterSpacing: '0.03em',
+        display: 'inline-block',
+      }}
+    >
       {children}
-    </span>
+    </motion.span>
   )
 }
 

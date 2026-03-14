@@ -1,6 +1,7 @@
 import React, { useState, useRef } from 'react'
-import { Upload, Zap, Check, Edit3, AlertCircle, Camera } from 'lucide-react'
-import { Card, Btn, InputRow, SectionTitle, Spinner, Badge } from './UI.jsx'
+import { motion } from 'framer-motion'
+import { Upload, Zap, Check, Edit3, AlertCircle, Camera, CheckCircle2, ChevronRight, Activity, Camera as CameraIcon, BarChart2, Edit2 } from 'lucide-react'
+import { Card, Btn, InputRow, SectionTitle, Spinner, Badge, MotionCard, Grid } from './UI.jsx'
 import { analyzeFoodImage, fileToBase64 } from '../utils/gemini.js'
 
 const CONFIDENCE_COLOR = { high: 'var(--green)', medium: 'var(--yellow)', low: 'var(--red)' }
@@ -201,7 +202,7 @@ export default function AIFoodAnalyzer({ onAddToLog, apiKey }) {
             <div style={{ fontSize: 11, color: 'var(--text3)', marginBottom: 10, display: 'flex', alignItems: 'center', gap: 6 }}>
               <Edit3 size={12} /> EDIT NUTRITION VALUES BEFORE SAVING
             </div>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 10 }}>
+            <Grid cols={2} gap={10}>
               {[
                 { key: 'calories', label: 'Calories', unit: 'kcal', color: 'var(--green)' },
                 { key: 'protein', label: 'Protein', unit: 'g', color: 'var(--blue)' },
@@ -223,7 +224,7 @@ export default function AIFoodAnalyzer({ onAddToLog, apiKey }) {
                   </div>
                 </div>
               ))}
-            </div>
+            </Grid>
 
             {result.fiber && (
               <div style={{ marginTop: 8, fontSize: 12, color: 'var(--text3)' }}>
@@ -233,12 +234,12 @@ export default function AIFoodAnalyzer({ onAddToLog, apiKey }) {
           </div>
 
           {result.notes && (
-            <div style={{ fontSize: 12, color: 'var(--text2)', background: 'var(--bg3)', borderRadius: 8, padding: '8px 12px', marginBottom: 14, fontStyle: 'italic' }}>
-              💡 {result.notes}
+            <div style={{ display: 'flex', gap: 8, fontSize: 12, color: 'var(--text2)', background: 'var(--bg3)', borderRadius: 8, padding: '8px 12px', marginBottom: 14, fontStyle: 'italic' }}>
+              <AlertCircle size={14} style={{ flexShrink: 0, marginTop: 2, color: 'var(--accent)' }}/> <span>{result.notes}</span>
             </div>
           )}
 
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+          <Grid cols={2} gap={10}>
             <Btn
               onClick={() => { setResult(null); setImage(null); setImageFile(null) }}
               variant="ghost"
@@ -253,27 +254,27 @@ export default function AIFoodAnalyzer({ onAddToLog, apiKey }) {
             >
               {saved ? <><Check size={14} /> Added!</> : 'Add to today\'s log'}
             </Btn>
-          </div>
+          </Grid>
         </Card>
       )}
 
       {/* How it works */}
       {!result && !loading && (
-        <Card style={{ marginTop: 16, background: 'var(--bg3)' }}>
+        <MotionCard style={{ marginTop: 16, background: 'var(--bg3)' }} delay={0.1}>
           <div style={{ fontSize: 12, fontWeight: 600, color: 'var(--text2)', marginBottom: 10 }}>How it works</div>
           {[
-            ['📸', 'Upload a clear photo of your food'],
-            ['🤖', 'Gemini 1.5 Flash analyzes the image'],
-            ['🍗', 'Get estimated calories, protein, carbs & fat'],
-            ['✏️', 'Edit the values if needed'],
-            ['✅', 'Save directly to today\'s nutrition log'],
+            [<CameraIcon size={16}/>, 'Upload a clear photo of your food'],
+            [<Zap size={16}/>, 'Gemini 1.5 Flash analyzes the image'],
+            [<Activity size={16}/>, 'Get estimated calories, protein, carbs & fat'],
+            [<Edit2 size={16}/>, 'Edit the values if needed'],
+            [<CheckCircle2 size={16}/>, 'Save directly to today\'s nutrition log'],
           ].map(([icon, text]) => (
             <div key={text} style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 8, fontSize: 13, color: 'var(--text2)' }}>
-              <span style={{ fontSize: 16, width: 24 }}>{icon}</span>
+              <span style={{ width: 24, color: 'var(--accent)' }}>{icon}</span>
               {text}
             </div>
           ))}
-        </Card>
+        </MotionCard>
       )}
     </div>
   )

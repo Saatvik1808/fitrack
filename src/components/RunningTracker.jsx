@@ -1,7 +1,8 @@
 import React, { useState } from 'react'
+import { motion } from 'framer-motion'
 import { Plus, Trash2, Activity } from 'lucide-react'
 import { Line } from 'react-chartjs-2'
-import { Card, Btn, InputRow, SectionTitle, EmptyState, Badge, StatCard } from './UI.jsx'
+import { Card, Btn, InputRow, SectionTitle, EmptyState, Badge, StatCard, Grid, MotionCard } from './UI.jsx'
 import { calcPace, calcRunCalories, formatDate, getLast30Days } from '../utils/calculations.js'
 import { Chart as ChartJS, CategoryScale, LinearScale, PointElement, LineElement, Tooltip, Filler } from 'chart.js'
 
@@ -60,20 +61,20 @@ export default function RunningTracker({ runs, addRun, deleteRun, profile }) {
       </div>
 
       {/* Stats */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 10, marginBottom: 14 }}>
-        <Card>
+      <Grid cols={3} gap={10} style={{ marginBottom: 14 }}>
+        <MotionCard delay={0}>
           <div style={{ fontSize: 10, color: 'var(--text3)', marginBottom: 4 }}>TOTAL KM</div>
           <div style={{ fontSize: 22, fontWeight: 700, color: 'var(--green)' }}>{totalKm.toFixed(1)}</div>
-        </Card>
-        <Card>
+        </MotionCard>
+        <MotionCard delay={0.05}>
           <div style={{ fontSize: 10, color: 'var(--text3)', marginBottom: 4 }}>RUNS</div>
           <div style={{ fontSize: 22, fontWeight: 700 }}>{runs.length}</div>
-        </Card>
-        <Card>
+        </MotionCard>
+        <MotionCard delay={0.1}>
           <div style={{ fontSize: 10, color: 'var(--text3)', marginBottom: 4 }}>CALS BURNED</div>
           <div style={{ fontSize: 22, fontWeight: 700, color: 'var(--orange)' }}>{totalCalories.toLocaleString()}</div>
-        </Card>
-      </div>
+        </MotionCard>
+      </Grid>
 
       {/* Chart */}
       {runs.length > 0 && (
@@ -92,11 +93,16 @@ export default function RunningTracker({ runs, addRun, deleteRun, profile }) {
         </Card>
       )}
 
-      {/* Log form */}
       {showForm && (
+        <motion.div
+           initial={{ opacity: 0, height: 0 }}
+           animate={{ opacity: 1, height: 'auto' }}
+           exit={{ opacity: 0, height: 0 }}
+           style={{ overflow: 'hidden' }}
+        >
         <Card style={{ marginBottom: 16 }} className="fade-in">
           <SectionTitle>New Run</SectionTitle>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+          <Grid cols={2} gap={10}>
             <InputRow label="Date">
               <input type="date" max={today} value={form.date} onChange={e => setForm(p => ({ ...p, date: e.target.value }))} />
             </InputRow>
@@ -111,7 +117,7 @@ export default function RunningTracker({ runs, addRun, deleteRun, profile }) {
             <InputRow label="Duration" hint="minutes">
               <input type="number" placeholder="30" value={form.duration} onChange={e => setForm(p => ({ ...p, duration: e.target.value }))} />
             </InputRow>
-          </div>
+          </Grid>
 
           {form.distance && form.duration && (
             <div style={{ background: 'var(--bg3)', borderRadius: 10, padding: 12, marginBottom: 12, display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 10, textAlign: 'center' }}>
@@ -141,13 +147,14 @@ export default function RunningTracker({ runs, addRun, deleteRun, profile }) {
             <Activity size={14} /> Save Run
           </Btn>
         </Card>
+        </motion.div>
       )}
 
       {/* Run history */}
       <SectionTitle>Run History</SectionTitle>
       {runs.length === 0 && <EmptyState icon={Activity} title="No runs logged yet" sub="Track your first run above" />}
-      {runs.map(run => (
-        <Card key={run.id} style={{ marginBottom: 10 }}>
+      {runs.map((run, i) => (
+        <MotionCard key={run.id} style={{ marginBottom: 10 }} delay={i * 0.05}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
             <div>
               <div style={{ fontWeight: 600, fontSize: 15 }}>
@@ -179,7 +186,7 @@ export default function RunningTracker({ runs, addRun, deleteRun, profile }) {
             )}
           </div>
           {run.notes && <div style={{ fontSize: 12, color: 'var(--text3)', marginTop: 8, fontStyle: 'italic' }}>{run.notes}</div>}
-        </Card>
+        </MotionCard>
       ))}
     </div>
   )

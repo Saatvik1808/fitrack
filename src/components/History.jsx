@@ -1,6 +1,7 @@
 import React, { useState } from 'react'
-import { Download, Calendar } from 'lucide-react'
-import { Card, Btn, SectionTitle, Tabs } from './UI.jsx'
+import { motion } from 'framer-motion'
+import { Download, Calendar, Scale, Flame, Dumbbell, Moon, Droplet, Smile } from 'lucide-react'
+import { Card, Btn, SectionTitle, Tabs, Grid, MotionCard } from './UI.jsx'
 import { formatDate, getLast30Days, getWeekDates } from '../utils/calculations.js'
 import { exportData, exportCSV } from '../hooks/useStorage.js'
 
@@ -28,12 +29,12 @@ function LogRow({ date, log }) {
       <div>
         {hasData ? (
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
-            {log.weight && <Chip label="⚖️" val={`${log.weight} kg`} />}
-            {log.calories && <Chip label="🔥" val={`${log.calories} kcal`} />}
-            {log.protein && <Chip label="💪" val={`${log.protein}g P`} />}
-            {log.sleep && <Chip label="😴" val={`${log.sleep} hr`} />}
-            {log.water && <Chip label="💧" val={`${log.water} L`} />}
-            {log.mood && <Chip label="" val={log.mood} />}
+            {log.weight && <Chip icon={Scale} val={`${log.weight} kg`} />}
+            {log.calories && <Chip icon={Flame} val={`${log.calories} kcal`} />}
+            {log.protein && <Chip icon={Dumbbell} val={`${log.protein}g P`} />}
+            {log.sleep && <Chip icon={Moon} val={`${log.sleep} hr`} />}
+            {log.water && <Chip icon={Droplet} val={`${log.water} L`} />}
+            {log.mood && <Chip icon={Smile} val={log.mood} />}
           </div>
         ) : (
           <span style={{ fontSize: 12, color: 'var(--text3)' }}>No data logged</span>
@@ -43,7 +44,7 @@ function LogRow({ date, log }) {
   )
 }
 
-function Chip({ label, val }) {
+function Chip({ icon: Icon, val }) {
   return (
     <span style={{
       background: 'var(--bg3)',
@@ -51,8 +52,11 @@ function Chip({ label, val }) {
       padding: '3px 8px',
       fontSize: 11,
       color: 'var(--text2)',
+      display: 'inline-flex',
+      alignItems: 'center',
+      gap: 4,
     }}>
-      {label} {val}
+      {Icon && <Icon size={12} style={{ color: 'var(--accent)' }} />} {val}
     </span>
   )
 }
@@ -96,20 +100,20 @@ export default function History({ logs, workouts, runs }) {
       <Tabs tabs={TABS} active={tab} onChange={setTab} />
 
       {/* Period summary */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 8, margin: '14px 0' }}>
+      <Grid cols={4} gap={8} style={{ margin: '14px 0' }}>
         {[
           { label: 'Avg Cals', value: avgCals ? `${avgCals}` : '—', unit: 'kcal' },
           { label: 'Avg Protein', value: avgProtein ? `${avgProtein}g` : '—' },
           { label: 'Total KM', value: totalRunKm.toFixed(1), unit: 'km' },
           { label: 'Workouts', value: totalWorkouts },
-        ].map(({ label, value, unit }) => (
-          <Card key={label} style={{ padding: '10px 12px', textAlign: 'center' }}>
+        ].map(({ label, value, unit }, i) => (
+          <MotionCard key={label} style={{ padding: '10px 12px', textAlign: 'center' }} delay={i * 0.05}>
             <div style={{ fontSize: 10, color: 'var(--text3)', marginBottom: 3 }}>{label}</div>
             <div style={{ fontSize: 16, fontWeight: 700 }}>{value}</div>
             {unit && <div style={{ fontSize: 10, color: 'var(--text3)' }}>{unit}</div>}
-          </Card>
+          </MotionCard>
         ))}
-      </div>
+      </Grid>
 
       <Card>
         <SectionTitle>Daily Logs</SectionTitle>

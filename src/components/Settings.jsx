@@ -1,6 +1,7 @@
 import React, { useState } from 'react'
-import { Save, Key, User, Target, Trash2, AlertTriangle, Palette } from 'lucide-react'
-import { Card, Btn, InputRow, SectionTitle, Divider } from './UI.jsx'
+import { motion } from 'framer-motion'
+import { Save, Key, User, Target, Trash2, AlertTriangle, Palette, Moon, Sun, Monitor, AlertCircle, Lock } from 'lucide-react'
+import { Card, Btn, InputRow, SectionTitle, Divider, Grid, MotionCard } from './UI.jsx'
 import { calcBMI, bmiCategory } from '../utils/calculations.js'
 
 
@@ -30,7 +31,7 @@ export default function Settings({ profile, setProfile, theme = 'dark', setTheme
       <h2 style={{ fontSize: 18, fontWeight: 700, marginBottom: 16 }}>Settings</h2>
 
       {/* Profile */}
-      <Card style={{ marginBottom: 14 }}>
+      <MotionCard style={{ marginBottom: 14 }} delay={0}>
         <SectionTitle>
           <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
             <User size={15} /> Profile
@@ -39,24 +40,24 @@ export default function Settings({ profile, setProfile, theme = 'dark', setTheme
         <InputRow label="Your Name">
           <input placeholder="Athlete" value={form.name} onChange={e => setForm(p => ({ ...p, name: e.target.value }))} />
         </InputRow>
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+        <Grid cols={2} gap={10}>
           <InputRow label="Height" hint="cm">
             <input type="number" placeholder="173" value={form.height} onChange={e => setForm(p => ({ ...p, height: e.target.value }))} />
           </InputRow>
           <InputRow label="Start Date">
             <input type="date" value={form.startDate} onChange={e => setForm(p => ({ ...p, startDate: e.target.value }))} />
           </InputRow>
-        </div>
-      </Card>
+        </Grid>
+      </MotionCard>
 
       {/* Weight targets */}
-      <Card style={{ marginBottom: 14 }}>
+      <MotionCard style={{ marginBottom: 14 }} delay={0.05}>
         <SectionTitle>
           <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
             <Target size={15} /> Weight & Goals
           </span>
         </SectionTitle>
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+        <Grid cols={2} gap={10}>
           <InputRow label="Start Weight" hint="kg">
             <input type="number" step="0.1" placeholder="84" value={form.startWeight} onChange={e => setForm(p => ({ ...p, startWeight: e.target.value }))} />
           </InputRow>
@@ -73,40 +74,41 @@ export default function Settings({ profile, setProfile, theme = 'dark', setTheme
               <div style={{ fontSize: 11, color: bmiCat.color }}>{bmiCat.label}</div>
             </div>
           </div>
-        </div>
-      </Card>
+        </Grid>
+      </MotionCard>
 
       {/* Nutrition targets */}
-      <Card style={{ marginBottom: 14 }}>
+      <MotionCard style={{ marginBottom: 14 }} delay={0.1}>
         <SectionTitle>Daily Nutrition Targets</SectionTitle>
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+        <Grid cols={2} gap={10}>
           <InputRow label="Calorie Target" hint="kcal">
             <input type="number" placeholder="1650" value={form.dailyCalorieTarget} onChange={e => setForm(p => ({ ...p, dailyCalorieTarget: e.target.value }))} />
           </InputRow>
           <InputRow label="Protein Target" hint="g">
             <input type="number" placeholder="163" value={form.dailyProteinTarget} onChange={e => setForm(p => ({ ...p, dailyProteinTarget: e.target.value }))} />
           </InputRow>
+        </Grid>
+        <div style={{ display: 'flex', gap: 8, fontSize: 11, color: 'var(--text3)', background: 'var(--bg3)', borderRadius: 8, padding: 10 }}>
+          <AlertCircle size={14} style={{ color: 'var(--accent)', flexShrink: 0 }} /> Based on your coaching plan: 1,650 kcal/day · 163g protein · 146g carbs · 47g fat
         </div>
-        <div style={{ fontSize: 11, color: 'var(--text3)', background: 'var(--bg3)', borderRadius: 8, padding: 10 }}>
-          💡 Based on your coaching plan: 1,650 kcal/day · 163g protein · 146g carbs · 47g fat
-        </div>
-      </Card>
+      </MotionCard>
 
       {/* Appearance */}
-      <Card style={{ marginBottom: 14 }}>
+      <MotionCard style={{ marginBottom: 14 }} delay={0.15}>
         <SectionTitle>
           <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
             <Palette size={15} /> Appearance
           </span>
         </SectionTitle>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 10 }}>
+        <Grid cols={3} gap={10}>
           {[
-            { id: 'dark',   emoji: '🌙', label: 'Dark',   sub: 'Default' },
-            { id: 'light',  emoji: '☀️', label: 'Light',  sub: 'Bright' },
-            { id: 'system', emoji: '🖥', label: 'System', sub: 'Auto' },
+            { id: 'dark',   icon: Moon, label: 'Dark',   sub: 'Default' },
+            { id: 'light',  icon: Sun, label: 'Light',  sub: 'Bright' },
+            { id: 'system', icon: Monitor, label: 'System', sub: 'Auto' },
           ].map(opt => (
-            <button
+            <motion.button
               key={opt.id}
+              whileTap={{ scale: 0.95 }}
               onClick={() => setTheme(opt.id)}
               style={{
                 padding: '14px 10px',
@@ -123,16 +125,16 @@ export default function Settings({ profile, setProfile, theme = 'dark', setTheme
                 boxShadow: theme === opt.id ? '0 0 0 3px var(--accent)22' : 'none',
               }}
             >
-              <span style={{ fontSize: 20 }}>{opt.emoji}</span>
+              <opt.icon size={20} style={{ color: theme === opt.id ? 'var(--accent2)' : 'var(--text3)' }} />
               <span style={{ fontSize: 13, fontWeight: 600, color: theme === opt.id ? 'var(--accent2)' : 'var(--text)' }}>{opt.label}</span>
               <span style={{ fontSize: 10, color: 'var(--text3)' }}>{opt.sub}</span>
-            </button>
+            </motion.button>
           ))}
-        </div>
-      </Card>
+        </Grid>
+      </MotionCard>
 
       {/* Gemini API key */}
-      <Card style={{ marginBottom: 14 }}>
+      <MotionCard style={{ marginBottom: 14 }} delay={0.2}>
         <SectionTitle>
           <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
             <Key size={15} /> Gemini API Key
@@ -165,10 +167,10 @@ export default function Settings({ profile, setProfile, theme = 'dark', setTheme
             </button>
           </div>
         </InputRow>
-        <div style={{ fontSize: 11, color: 'var(--text3)' }}>
-          🔒 Your API key is stored only in your browser's localStorage. It is never sent to any server other than Google's Gemini API.
+        <div style={{ display: 'flex', alignItems: 'flex-start', gap: 6, fontSize: 11, color: 'var(--text3)' }}>
+          <Lock size={12} style={{ flexShrink: 0, marginTop: 2, color: 'var(--accent)' }}/> <div>Your API key is stored only in your browser's localStorage. It is never sent to any server other than Google's Gemini API.</div>
         </div>
-      </Card>
+      </MotionCard>
 
       <Btn onClick={handleSave} variant={saved ? 'success' : 'primary'} style={{ width: '100%', justifyContent: 'center', marginBottom: 14 }}>
         <Save size={14} /> {saved ? 'Settings saved ✓' : 'Save settings'}
@@ -177,7 +179,7 @@ export default function Settings({ profile, setProfile, theme = 'dark', setTheme
       <Divider />
 
       {/* Danger zone */}
-      <Card style={{ border: '1px solid var(--red)44', background: 'var(--red)08', marginTop: 14 }}>
+      <MotionCard style={{ border: '1px solid var(--red)44', background: 'var(--red)08', marginTop: 14 }} delay={0.25}>
         <SectionTitle>
           <span style={{ display: 'flex', alignItems: 'center', gap: 6, color: 'var(--red)' }}>
             <AlertTriangle size={15} /> Danger Zone
@@ -194,14 +196,14 @@ export default function Settings({ profile, setProfile, theme = 'dark', setTheme
             Cancel
           </button>
         )}
-      </Card>
+      </MotionCard>
 
       {/* App info */}
-      <Card style={{ marginTop: 14, background: 'var(--bg3)', textAlign: 'center' }}>
+      <MotionCard style={{ marginTop: 14, background: 'var(--bg3)', textAlign: 'center' }} delay={0.3}>
         <div style={{ fontWeight: 700, fontSize: 16, marginBottom: 2 }}>FitTrack <span style={{ color: 'var(--accent)' }}>OS</span></div>
         <div style={{ fontSize: 11, color: 'var(--text3)' }}>Built for 84 kg → 70 kg · Your personal training system</div>
         <div style={{ fontSize: 10, color: 'var(--text3)', marginTop: 6 }}>Data stored locally · Works offline · AI powered by Gemini</div>
-      </Card>
+      </MotionCard>
     </div>
   )
 }

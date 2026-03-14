@@ -107,3 +107,12 @@ select option {
 }
 
 .fade-in { animation: fadeIn 0.3s ease forwards; }
+
+/* Mobile helpers */
+@media (max-width: 768px) {
+  ::-webkit-scrollbar { display: none; }
+  body { 
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+}

@@ -5,8 +5,9 @@ import {
   BarElement, Title, Tooltip, Legend, Filler, ArcElement,
 } from 'chart.js'
 import { Line, Bar } from 'react-chartjs-2'
+import { motion } from 'framer-motion'
 import { Target, Flame, Dumbbell, Activity, Zap, Trophy } from 'lucide-react'
-import { Card, StatCard, SectionTitle, ProgressBar, Badge, Grid } from './UI.jsx'
+import { Card, StatCard, SectionTitle, ProgressBar, Badge, Grid, MotionCard } from './UI.jsx'
 import {
   calcBMI, bmiCategory, calcGoalProgress, getWeekDates, getLast30Days,
   formatDate, weeklyAvg, getStreakDays,
@@ -143,7 +144,7 @@ export default function Dashboard({ logs, workouts, runs, profile }) {
           {new Date().toLocaleDateString('en-IN', { weekday: 'long', day: 'numeric', month: 'long' })}
         </div>
         <h1 style={{ fontSize: 22, fontWeight: 700, letterSpacing: '-0.02em' }}>
-          Good {new Date().getHours() < 12 ? 'morning' : new Date().getHours() < 17 ? 'afternoon' : 'evening'}, {profile.name} 👋
+          Good {new Date().getHours() < 12 ? 'morning' : new Date().getHours() < 17 ? 'afternoon' : 'evening'}, {profile.name}
         </h1>
       </div>
 
@@ -155,6 +156,7 @@ export default function Dashboard({ logs, workouts, runs, profile }) {
           color="var(--accent2)"
           icon={Target}
           sub={`Goal: ${profile.goalWeight} kg`}
+          delay={0.0}
         />
         <StatCard
           label="Goal Progress"
@@ -163,6 +165,7 @@ export default function Dashboard({ logs, workouts, runs, profile }) {
           color="var(--green)"
           icon={Trophy}
           sub={`${(profile.currentWeight - profile.goalWeight).toFixed(1)} kg to go`}
+          delay={0.05}
         />
         <StatCard
           label="BMI"
@@ -170,6 +173,7 @@ export default function Dashboard({ logs, workouts, runs, profile }) {
           color={bmiCat.color}
           icon={Activity}
           sub={bmiCat.label}
+          delay={0.1}
         />
         <StatCard
           label="Log Streak"
@@ -178,6 +182,7 @@ export default function Dashboard({ logs, workouts, runs, profile }) {
           color="var(--orange)"
           icon={Zap}
           sub="Keep it up!"
+          delay={0.15}
         />
       </Grid>
 
@@ -201,8 +206,8 @@ export default function Dashboard({ logs, workouts, runs, profile }) {
           <Flame size={16} color="var(--orange)" /> Today's snapshot
         </span>
       </SectionTitle>
-      <Card style={{ marginTop: 8 }}>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 10, textAlign: 'center' }}>
+      <MotionCard style={{ marginTop: 8 }} delay={0.2}>
+        <div className="snapshot-grid">
           {[
             { label: 'Calories', value: todayLog.calories || 0, unit: 'kcal', color: 'var(--green)', target: profile.dailyCalorieTarget },
             { label: 'Protein', value: todayLog.protein || 0, unit: 'g', color: 'var(--blue)', target: profile.dailyProteinTarget },
@@ -221,27 +226,27 @@ export default function Dashboard({ logs, workouts, runs, profile }) {
             </div>
           ))}
         </div>
-      </Card>
+      </MotionCard>
 
       {/* Weekly stats */}
-      <div style={{ marginTop: 20, display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
-        <Card>
+      <Grid cols={2} gap={10} style={{ marginTop: 20 }}>
+        <MotionCard delay={0.25}>
           <div style={{ fontSize: 11, color: 'var(--text3)', marginBottom: 2 }}>Weekly avg calories</div>
           <div style={{ fontSize: 20, fontWeight: 700 }}>{weeklyCalAvg || '—'}</div>
-        </Card>
-        <Card>
+        </MotionCard>
+        <MotionCard delay={0.3}>
           <div style={{ fontSize: 11, color: 'var(--text3)', marginBottom: 2 }}>Weekly avg protein</div>
           <div style={{ fontSize: 20, fontWeight: 700, color: 'var(--blue)' }}>{weeklyProtAvg || '—'}g</div>
-        </Card>
-        <Card>
+        </MotionCard>
+        <MotionCard delay={0.35}>
           <div style={{ fontSize: 11, color: 'var(--text3)', marginBottom: 2 }}>Total km run</div>
           <div style={{ fontSize: 20, fontWeight: 700, color: 'var(--green)' }}>{totalRunKm.toFixed(1)}</div>
-        </Card>
-        <Card>
+        </MotionCard>
+        <MotionCard delay={0.4}>
           <div style={{ fontSize: 11, color: 'var(--text3)', marginBottom: 2 }}>Workouts logged</div>
           <div style={{ fontSize: 20, fontWeight: 700, color: 'var(--orange)' }}>{workouts.length}</div>
-        </Card>
-      </div>
+        </MotionCard>
+      </Grid>
 
       {/* Charts */}
       <div style={{ marginTop: 20 }}>
@@ -281,6 +286,20 @@ export default function Dashboard({ logs, workouts, runs, profile }) {
           </Card>
         </div>
       </Grid>
+      <style>{`
+        .snapshot-grid {
+          display: grid;
+          grid-template-columns: repeat(4, 1fr);
+          gap: 10px;
+          text-align: center;
+        }
+        @media (max-width: 768px) {
+          .snapshot-grid {
+            grid-template-columns: repeat(2, 1fr);
+            gap: 16px 10px;
+          }
+        }
+      `}</style>
     </div>
   )
 }

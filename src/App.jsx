@@ -1,4 +1,5 @@
 import React, { useState } from 'react'
+import { motion, AnimatePresence } from 'framer-motion'
 import Nav from './components/Nav.jsx'
 import Dashboard from './components/Dashboard.jsx'
 import DailyLog from './components/DailyLog.jsx'
@@ -42,7 +43,7 @@ export default function App() {
   }
 
   return (
-    <div style={{ minHeight: '100dvh' }}>
+    <div style={{ minHeight: '100dvh', display: 'flex' }}>
       <Nav active={page} onChange={setPage} />
 
       {/* Main content */}
@@ -50,16 +51,34 @@ export default function App() {
         marginLeft: 'var(--sidebar-width, 220px)',
         padding: '1.5rem 1.25rem',
         paddingBottom: 'calc(1.5rem + env(safe-area-inset-bottom))',
-        maxWidth: 700,
+        paddingTop: 'calc(1.5rem + env(safe-area-inset-top))',
+        width: '100%',
+        maxWidth: 768,
+        margin: '0 auto',
+        minHeight: '100dvh',
+        boxSizing: 'border-box'
       }}>
-        {pages[page]}
+        <AnimatePresence mode="wait">
+          <motion.div
+            key={page}
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -10 }}
+            transition={{ duration: 0.2 }}
+          >
+            {pages[page]}
+          </motion.div>
+        </AnimatePresence>
       </main>
 
       <style>{`
         @media (max-width: 768px) {
           main {
             margin-left: 0 !important;
-            padding-bottom: calc(80px + env(safe-area-inset-bottom)) !important;
+            padding-bottom: calc(90px + env(safe-area-inset-bottom)) !important;
+            padding-top: calc(2rem + env(safe-area-inset-top)) !important;
+            padding-left: 1rem !important;
+            padding-right: 1rem !important;
           }
         }
       `}</style>

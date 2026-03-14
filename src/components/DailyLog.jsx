@@ -1,6 +1,7 @@
 import React, { useState } from 'react'
+import { motion, AnimatePresence } from 'framer-motion'
 import { Save, ChevronLeft, ChevronRight, Plus, Trash2 } from 'lucide-react'
-import { Card, Btn, InputRow, Tabs, SectionTitle, MacroBar, RangeInput, Divider } from './UI.jsx'
+import { Card, Btn, InputRow, Tabs, SectionTitle, MacroBar, RangeInput, Divider, MotionCard, Grid } from './UI.jsx'
 import { formatDateFull } from '../utils/calculations.js'
 
 const TABS = [
@@ -9,8 +10,8 @@ const TABS = [
   { id: 'recovery', label: 'Recovery' },
 ]
 
-const MOOD_OPTS = ['😫 Terrible', '😞 Low', '😐 Okay', '😊 Good', '🔥 Amazing']
-const ENERGY_LABELS = ['💀 Dead', '😴 Tired', '😐 Okay', '⚡ Good', '🚀 Fired up']
+const MOOD_OPTS = ['Terrible', 'Low', 'Okay', 'Good', 'Amazing']
+const ENERGY_LABELS = ['Dead', 'Tired', 'Okay', 'Good', 'Fired up']
 
 export default function DailyLog({ logs, setLog, today, profile }) {
   const [tab, setTab] = useState('body')
@@ -91,21 +92,28 @@ export default function DailyLog({ logs, setLog, today, profile }) {
       <div style={{ marginTop: 14 }}>
 
         {/* BODY METRICS */}
+        <AnimatePresence mode="wait">
         {tab === 'body' && (
-          <div>
+          <motion.div
+            key="body"
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -10 }}
+            transition={{ duration: 0.2 }}
+          >
             <Card>
               <SectionTitle>Body Metrics</SectionTitle>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+              <Grid cols={2} gap={10}>
                 <InputRow label="Morning Weight" hint="kg">
                   <input type="number" placeholder="84.0" step="0.1" value={log.weight || ''} onChange={e => update('weight', e.target.value)} />
                 </InputRow>
                 <InputRow label="Body Fat" hint="%">
                   <input type="number" placeholder="20.0" step="0.1" value={log.bodyFat || ''} onChange={e => update('bodyFat', e.target.value)} />
                 </InputRow>
-              </div>
+              </Grid>
               <Divider />
               <div style={{ fontSize: 12, color: 'var(--text3)', marginBottom: 10, fontWeight: 500 }}>MEASUREMENTS (cm)</div>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+              <Grid cols={2} gap={10}>
                 <InputRow label="Chest">
                   <input type="number" placeholder="100" step="0.5" value={log.chest || ''} onChange={e => update('chest', e.target.value)} />
                 </InputRow>
@@ -118,17 +126,23 @@ export default function DailyLog({ logs, setLog, today, profile }) {
                 <InputRow label="Left Leg">
                   <input type="number" placeholder="55" step="0.5" value={log.leg || ''} onChange={e => update('leg', e.target.value)} />
                 </InputRow>
-              </div>
+              </Grid>
               <InputRow label="Notes">
                 <textarea rows={2} placeholder="How did you feel today?" value={log.bodyNotes || ''} onChange={e => update('bodyNotes', e.target.value)} style={{ resize: 'vertical' }} />
               </InputRow>
             </Card>
-          </div>
+          </motion.div>
         )}
 
         {/* NUTRITION */}
         {tab === 'nutrition' && (
-          <div>
+          <motion.div
+            key="nutrition"
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -10 }}
+            transition={{ duration: 0.2 }}
+          >
             <Card style={{ marginBottom: 12 }}>
               <SectionTitle>Macro Summary</SectionTitle>
               <MacroBar
@@ -143,7 +157,7 @@ export default function DailyLog({ logs, setLog, today, profile }) {
 
             <Card style={{ marginBottom: 12 }}>
               <SectionTitle>Quick Entry</SectionTitle>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+              <Grid cols={2} gap={10}>
                 <InputRow label="Calories" hint="kcal">
                   <input type="number" placeholder="1650" value={log.calories || ''} onChange={e => update('calories', e.target.value)} />
                 </InputRow>
@@ -156,7 +170,7 @@ export default function DailyLog({ logs, setLog, today, profile }) {
                 <InputRow label="Fat" hint="g">
                   <input type="number" placeholder="47" value={log.fat || ''} onChange={e => update('fat', e.target.value)} />
                 </InputRow>
-              </div>
+              </Grid>
               <InputRow label="Water" hint="litres">
                 <input type="number" placeholder="3.5" step="0.25" value={log.water || ''} onChange={e => update('water', e.target.value)} />
               </InputRow>
@@ -183,22 +197,29 @@ export default function DailyLog({ logs, setLog, today, profile }) {
                     </button>
                   </div>
                   <input type="text" placeholder="Meal name (e.g. Chicken Rice Bowl)" value={meal.name} onChange={e => updateMeal(meal.id, 'name', e.target.value)} style={{ marginBottom: 8 }} />
-                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 6 }}>
+                  <Grid cols={4} gap={6} className="macro-input-grid">
                     {['calories', 'protein', 'carbs', 'fat'].map(field => (
                       <div key={field}>
                         <div style={{ fontSize: 10, color: 'var(--text3)', marginBottom: 3, textTransform: 'capitalize' }}>{field}</div>
                         <input type="number" placeholder="0" value={meal[field]} onChange={e => updateMeal(meal.id, field, e.target.value)} style={{ padding: '6px 8px', fontSize: 13 }} />
                       </div>
                     ))}
-                  </div>
+                  </Grid>
                 </div>
               ))}
             </Card>
-          </div>
+          </motion.div>
         )}
 
         {/* RECOVERY */}
         {tab === 'recovery' && (
+          <motion.div
+            key="recovery"
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -10 }}
+            transition={{ duration: 0.2 }}
+          >
           <Card>
             <SectionTitle>Recovery & Wellness</SectionTitle>
             <InputRow label="Sleep Duration" hint="hours">
@@ -247,7 +268,9 @@ export default function DailyLog({ logs, setLog, today, profile }) {
               <textarea rows={3} placeholder="How are you feeling? Any soreness, stress, etc..." value={log.recoveryNotes || ''} onChange={e => update('recoveryNotes', e.target.value)} style={{ resize: 'vertical' }} />
             </InputRow>
           </Card>
+          </motion.div>
         )}
+        </AnimatePresence>
 
         <div style={{ marginTop: 16 }}>
           <Btn onClick={handleSave} variant={saved ? 'success' : 'primary'} style={{ width: '100%', justifyContent: 'center' }}>
@@ -255,6 +278,14 @@ export default function DailyLog({ logs, setLog, today, profile }) {
           </Btn>
         </div>
       </div>
+      <style>{`
+        @media (max-width: 768px) {
+          .macro-input-grid {
+            grid-template-columns: 1fr 1fr !important;
+            gap: 10px !important;
+          }
+        }
+      `}</style>
     </div>
   )
 }
