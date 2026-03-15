@@ -1,15 +1,8 @@
 import { useState, useEffect, useCallback } from 'react'
 
-const THEME_KEY = 'fittrack_theme'
-
 export function useTheme() {
-  const [theme, setThemeState] = useState(() => {
-    try {
-      return localStorage.getItem(THEME_KEY) || 'dark'
-    } catch {
-      return 'dark'
-    }
-  })
+  // We'll keep theme in localStorage for instant boot but sync it from useSettings in Dashboard
+  const [theme, setThemeState] = useState('dark')
 
   const applyTheme = useCallback((t) => {
     const root = document.documentElement
@@ -20,6 +13,12 @@ export function useTheme() {
     } else {
       root.classList.add('theme-light')
     }
+  }, [])
+
+  useEffect(() => {
+    // Initial load from storage for flickering prevention
+    const saved = localStorage.getItem('fittrack_theme') || 'dark'
+    setThemeState(saved)
   }, [])
 
   useEffect(() => {
@@ -34,7 +33,7 @@ export function useTheme() {
   }, [theme, applyTheme])
 
   const setTheme = useCallback((t) => {
-    try { localStorage.setItem(THEME_KEY, t) } catch {}
+    localStorage.setItem('fittrack_theme', t)
     setThemeState(t)
   }, [])
 

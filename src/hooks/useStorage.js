@@ -1,51 +1,13 @@
 import { useState, useEffect, useCallback } from 'react'
-import { doc, getDoc, setDoc } from 'firebase/firestore'
+import { doc, setDoc, onSnapshot, getDoc } from 'firebase/firestore'
 import { db } from '@/lib/firebase/config'
-
-// Migration emails — existing localStorage data belongs to these users
-const SAATVIK_EMAILS = [
-  'saatvik.shrivastava08@bricknbolt.com',
-  'saatvik.shrivastava08@gmail.com'
-]
-
-const BASE_KEYS = {
-  LOGS: 'fittrack_logs',
-  WORKOUTS: 'fittrack_workouts',
-  RUNS: 'fittrack_runs',
-  PROFILE: 'fittrack_profile',
-  SETTINGS: 'fittrack_settings',
-}
-
-function userKeys(userId) {
-  return {
-    LOGS: `fittrack_${userId}_logs`,
-    WORKOUTS: `fittrack_${userId}_workouts`,
-    RUNS: `fittrack_${userId}_runs`,
-    PROFILE: `fittrack_${userId}_profile`,
-    SETTINGS: `fittrack_${userId}_settings`,
-  }
-}
-
 import { formatLocalYYYYMMDD } from '../utils/calculations.js'
 
 function getToday() {
   return formatLocalYYYYMMDD()
 }
 
-function getDefaultProfile(userEmail) {
-  if (userEmail && SAATVIK_EMAILS.includes(userEmail)) {
-    return {
-      name: 'Saatvik',
-      currentWeight: 84,
-      goalWeight: 70,
-      height: 173,
-      startWeight: 84,
-      startDate: getToday(),
-      dailyCalorieTarget: 1650,
-      dailyProteinTarget: 163,
-      geminiApiKey: '',
-    }
-  }
+function getDefaultProfile() {
   return {
     name: '',
     currentWeight: '',
@@ -59,104 +21,48 @@ function getDefaultProfile(userEmail) {
   }
 }
 
-function load(key, fallback) {
-  if (typeof window === 'undefined') return fallback
-  try {
-    const raw = window.localStorage.getItem(key)
-    return raw ? JSON.parse(raw) : fallback
-  } catch { return fallback }
-}
-
-// Simple in-memory debounce map for Firestore writes
+// Background save helper (no local storage)
 const dbTimeouts = {}
+function saveToDb(userId, collectionName, value) {
+  if (!userId || !db || !collectionName) return
 
-function save(key, value, userId, collectionName) {
-  try { localStorage.setItem(key, JSON.stringify(value)) } catch {}
+  if (dbTimeouts[collectionName]) {
+    clearTimeout(dbTimeouts[collectionName])
+  }
   
-  // Sync to Firestore in the background with a 1500ms debounce
-  if (userId && db && collectionName) {
-    if (dbTimeouts[collectionName]) {
-      clearTimeout(dbTimeouts[collectionName])
-    }
-    dbTimeouts[collectionName] = setTimeout(() => {
-      const docRef = doc(db, 'users', userId, 'data', collectionName)
-      setDoc(docRef, { data: value }, { merge: true }).catch(err => console.error("Firestore sync error:", err))
-    }, 1500)
-  }
-}
-
-// Fetch from Firestore on mount and merge with local
-async function fetchFromDb(userId, collectionName, key, setState) {
-  if (!userId || !db) return
-  try {
+  dbTimeouts[collectionName] = setTimeout(() => {
     const docRef = doc(db, 'users', userId, 'data', collectionName)
-    const snap = await getDoc(docRef)
-    if (snap.exists() && snap.data().data) {
-      const remoteData = snap.data().data
-
-      setState(localData => {
-        let merged;
-        // Arrays (Workouts, Runs) - merge by ID
-        if (Array.isArray(remoteData) && Array.isArray(localData)) {
-          const localMap = new Map((localData || []).map(item => [item.id, item]))
-          remoteData.forEach(item => { if (!localMap.has(item.id)) localMap.set(item.id, item) })
-          merged = Array.from(localMap.values()).sort((a, b) => b.id - a.id) // keep newest first
-        } 
-        // Objects (Logs, Profile) - shallow merge
-        else if (typeof remoteData === 'object' && remoteData !== null) {
-          merged = { ...remoteData, ...(localData || {}) }
-        } else {
-          merged = remoteData
-        }
-
-        try { localStorage.setItem(key, JSON.stringify(merged)) } catch {}
-        return merged
-      })
-    }
-  } catch (err) {
-    console.error("Firestore fetch error:", err)
-  }
-}
-
-// Migrate original unscoped data to user-scoped keys (runs once per key)
-function migrateIfNeeded(userId, userEmail) {
-  const keys = userKeys(userId)
-  Object.entries(BASE_KEYS).forEach(([name, oldKey]) => {
-    const newKey = keys[name]
-    // Only migrate if old data exists and new key doesn't
-    if (localStorage.getItem(oldKey) && !localStorage.getItem(newKey)) {
-      localStorage.setItem(newKey, localStorage.getItem(oldKey))
-      // Also push migrated data to DB immediately
-      try {
-        const data = JSON.parse(localStorage.getItem(oldKey))
-        save(newKey, data, userId, name)
-      } catch {}
-    }
-  })
+    setDoc(docRef, { data: value }, { merge: true }).catch(err => console.error("Firestore sync error:", err))
+  }, 1000)
 }
 
 export function useProfile(userId, userEmail) {
-  const fallback = getDefaultProfile(userEmail)
-  const [profile, setProfileState] = useState(fallback)
+  const [profile, setProfileState] = useState(getDefaultProfile())
   const [isMounted, setIsMounted] = useState(false)
 
-  // Run migration and initial mount load
   useEffect(() => {
     setIsMounted(true)
-    if (userId && userEmail) migrateIfNeeded(userId, userEmail)
-    
-    const k = userId ? userKeys(userId).PROFILE : BASE_KEYS.PROFILE
-    setProfileState(load(k, fallback))
-    
-    if (userId) {
-      fetchFromDb(userId, 'PROFILE', k, setProfileState)
-    }
-  }, [userId, userEmail])
+    if (!userId || !db) return
+
+    const docRef = doc(db, 'users', userId, 'data', 'PROFILE')
+    const unsubscribe = onSnapshot(docRef, (snap) => {
+      if (snap.exists() && snap.data().data) {
+        setProfileState(snap.data().data)
+      } else {
+        // Init if empty
+        const initial = getDefaultProfile()
+        setProfileState(initial)
+        setDoc(docRef, { data: initial }, { merge: true })
+      }
+    })
+
+    return () => unsubscribe()
+  }, [userId])
 
   const setProfile = useCallback((updater) => {
     setProfileState(prev => {
       const next = typeof updater === 'function' ? updater(prev) : { ...prev, ...updater }
-      if (isMounted) save(userId ? userKeys(userId).PROFILE : BASE_KEYS.PROFILE, next, userId, 'PROFILE')
+      if (isMounted) saveToDb(userId, 'PROFILE', next)
       return next
     })
   }, [userId, isMounted])
@@ -170,12 +76,18 @@ export function useDailyLogs(userId) {
 
   useEffect(() => {
     setIsMounted(true)
-    const k = userId ? userKeys(userId).LOGS : BASE_KEYS.LOGS
-    setLogsState(load(k, {}))
-    
-    if (userId) {
-      fetchFromDb(userId, 'LOGS', k, setLogsState)
-    }
+    if (!userId || !db) return
+
+    const docRef = doc(db, 'users', userId, 'data', 'LOGS')
+    const unsubscribe = onSnapshot(docRef, (snap) => {
+      if (snap.exists() && snap.data().data) {
+        setLogsState(snap.data().data)
+      } else {
+        setLogsState({})
+      }
+    })
+
+    return () => unsubscribe()
   }, [userId])
 
   const setLog = useCallback((date, updater) => {
@@ -183,7 +95,7 @@ export function useDailyLogs(userId) {
       const current = prev[date] || {}
       const next = typeof updater === 'function' ? updater(current) : { ...current, ...updater }
       const newLogs = { ...prev, [date]: next }
-      if (isMounted) save(userId ? userKeys(userId).LOGS : BASE_KEYS.LOGS, newLogs, userId, 'LOGS')
+      if (isMounted) saveToDb(userId, 'LOGS', newLogs)
       return newLogs
     })
   }, [userId, isMounted])
@@ -200,17 +112,24 @@ export function useWorkouts(userId) {
 
   useEffect(() => {
     setIsMounted(true)
-    const k = userId ? userKeys(userId).WORKOUTS : BASE_KEYS.WORKOUTS
-    setWorkoutsState(load(k, []))
-    if (userId) {
-      fetchFromDb(userId, 'WORKOUTS', k, setWorkoutsState)
-    }
+    if (!userId || !db) return
+
+    const docRef = doc(db, 'users', userId, 'data', 'WORKOUTS')
+    const unsubscribe = onSnapshot(docRef, (snap) => {
+      if (snap.exists() && snap.data().data) {
+        setWorkoutsState(snap.data().data)
+      } else {
+        setWorkoutsState([])
+      }
+    })
+
+    return () => unsubscribe()
   }, [userId])
 
   const addWorkout = useCallback((workout) => {
     setWorkoutsState(prev => {
       const next = [{ ...workout, id: Date.now(), date: workout.date || getToday() }, ...prev]
-      if (isMounted) save(userId ? userKeys(userId).WORKOUTS : BASE_KEYS.WORKOUTS, next, userId, 'WORKOUTS')
+      if (isMounted) saveToDb(userId, 'WORKOUTS', next)
       return next
     })
   }, [userId, isMounted])
@@ -218,7 +137,7 @@ export function useWorkouts(userId) {
   const deleteWorkout = useCallback((id) => {
     setWorkoutsState(prev => {
       const next = prev.filter(w => w.id !== id)
-      if (isMounted) save(userId ? userKeys(userId).WORKOUTS : BASE_KEYS.WORKOUTS, next, userId, 'WORKOUTS')
+      if (isMounted) saveToDb(userId, 'WORKOUTS', next)
       return next
     })
   }, [userId, isMounted])
@@ -232,17 +151,24 @@ export function useRuns(userId) {
 
   useEffect(() => {
     setIsMounted(true)
-    const k = userId ? userKeys(userId).RUNS : BASE_KEYS.RUNS
-    setRunsState(load(k, []))
-    if (userId) {
-      fetchFromDb(userId, 'RUNS', k, setRunsState)
-    }
+    if (!userId || !db) return
+
+    const docRef = doc(db, 'users', userId, 'data', 'RUNS')
+    const unsubscribe = onSnapshot(docRef, (snap) => {
+      if (snap.exists() && snap.data().data) {
+        setRunsState(snap.data().data)
+      } else {
+        setRunsState([])
+      }
+    })
+
+    return () => unsubscribe()
   }, [userId])
 
   const addRun = useCallback((run) => {
     setRunsState(prev => {
       const next = [{ ...run, id: Date.now(), date: run.date || getToday() }, ...prev]
-      if (isMounted) save(userId ? userKeys(userId).RUNS : BASE_KEYS.RUNS, next, userId, 'RUNS')
+      if (isMounted) saveToDb(userId, 'RUNS', next)
       return next
     })
   }, [userId, isMounted])
@@ -250,7 +176,7 @@ export function useRuns(userId) {
   const deleteRun = useCallback((id) => {
     setRunsState(prev => {
       const next = prev.filter(r => r.id !== id)
-      if (isMounted) save(userId ? userKeys(userId).RUNS : BASE_KEYS.RUNS, next, userId, 'RUNS')
+      if (isMounted) saveToDb(userId, 'RUNS', next)
       return next
     })
   }, [userId, isMounted])
@@ -258,22 +184,86 @@ export function useRuns(userId) {
   return { runs, addRun, deleteRun, isMounted }
 }
 
-export function exportData(userId) {
-  const keys = userId ? userKeys(userId) : BASE_KEYS
-  const data = {
-    profile: load(keys.PROFILE, {}),
-    logs: load(keys.LOGS, {}),
-    workouts: load(keys.WORKOUTS, []),
-    runs: load(keys.RUNS, []),
-    exportedAt: formatLocalYYYYMMDD() + 'T' + new Date().toTimeString().split(' ')[0],
+export function useSettings(userId) {
+  const [settings, setSettingsState] = useState({ theme: 'dark' })
+  const [isMounted, setIsMounted] = useState(false)
+
+  useEffect(() => {
+    setIsMounted(true)
+    if (!userId || !db) return
+
+    const docRef = doc(db, 'users', userId, 'data', 'SETTINGS')
+    const unsubscribe = onSnapshot(docRef, (snap) => {
+      if (snap.exists() && snap.data().data) {
+        setSettingsState(snap.data().data)
+      } else {
+        const initial = { theme: 'dark' }
+        setSettingsState(initial)
+        setDoc(docRef, { data: initial }, { merge: true })
+      }
+    })
+
+    return () => unsubscribe()
+  }, [userId])
+
+  const setSettings = useCallback((updater) => {
+    setSettingsState(prev => {
+      const next = typeof updater === 'function' ? updater(prev) : { ...prev, ...updater }
+      if (isMounted) saveToDb(userId, 'SETTINGS', next)
+      return next
+    })
+  }, [userId, isMounted])
+
+  return [settings, setSettings]
+}
+
+export async function clearAllUserData(userId) {
+  if (!userId || !db) return
+  const collections = ['PROFILE', 'LOGS', 'WORKOUTS', 'RUNS', 'SETTINGS']
+  for (const coll of collections) {
+    const docRef = doc(db, 'users', userId, 'data', coll)
+    await setDoc(docRef, { data: null }, { merge: true })
   }
-  const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' })
-  const url = URL.createObjectURL(blob)
-  const a = document.createElement('a')
-  a.href = url
-  a.download = `fittrack-export-${getToday()}.json`
-  a.click()
-  URL.revokeObjectURL(url)
+}
+
+export async function exportData(userId) {
+  if (!userId || !db) {
+    alert("Must be logged in to export data.")
+    return
+  }
+
+  try {
+    const data = {
+      profile: {},
+      logs: {},
+      workouts: [],
+      runs: [],
+      exportedAt: formatLocalYYYYMMDD() + 'T' + new Date().toTimeString().split(' ')[0],
+    }
+
+    const collections = ['PROFILE', 'LOGS', 'WORKOUTS', 'RUNS']
+    for (const coll of collections) {
+      const docRef = doc(db, 'users', userId, 'data', coll)
+      const snap = await getDoc(docRef)
+      if (snap.exists() && snap.data().data) {
+        if (coll === 'PROFILE') data.profile = snap.data().data
+        if (coll === 'LOGS') data.logs = snap.data().data
+        if (coll === 'WORKOUTS') data.workouts = snap.data().data
+        if (coll === 'RUNS') data.runs = snap.data().data
+      }
+    }
+
+    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = `fittrack-export-${getToday()}.json`
+    a.click()
+    URL.revokeObjectURL(url)
+  } catch (error) {
+    console.error("Failed to export data from DB:", error)
+    alert("Export failed.")
+  }
 }
 
 export function exportCSV(logs) {

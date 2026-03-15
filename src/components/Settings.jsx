@@ -5,6 +5,8 @@ import { Card, Btn, InputRow, SectionTitle, Divider, Grid, MotionCard } from './
 import { calcBMI, bmiCategory } from '../utils/calculations.js'
 
 
+import { clearAllUserData } from '../hooks/useStorage.js'
+
 export default function Settings({ profile, setProfile, theme = 'dark', setTheme = () => {}, user, onLogout }) {
   const [form, setForm] = useState({ ...profile })
   const [saved, setSaved] = useState(false)
@@ -17,10 +19,12 @@ export default function Settings({ profile, setProfile, theme = 'dark', setTheme
     setTimeout(() => setSaved(false), 1500)
   }
 
-  function clearAllData() {
+  async function clearAllData() {
     if (!confirmClear) { setConfirmClear(true); return }
-    Object.keys(localStorage).filter(k => k.startsWith('fittrack_')).forEach(k => localStorage.removeItem(k))
-    window.location.reload()
+    if (user?.uid) {
+      await clearAllUserData(user.uid)
+      window.location.reload()
+    }
   }
 
   const bmi = calcBMI(Number(form.currentWeight), Number(form.height))
@@ -209,7 +213,7 @@ export default function Settings({ profile, setProfile, theme = 'dark', setTheme
           </div>
         </InputRow>
         <div style={{ display: 'flex', alignItems: 'flex-start', gap: 6, fontSize: 11, color: 'var(--text3)' }}>
-          <Lock size={12} style={{ flexShrink: 0, marginTop: 2, color: 'var(--accent)' }}/> <div>Your API key is stored only in your browser's localStorage. It is never sent to any server other than Google's Gemini API.</div>
+          <Lock size={12} style={{ flexShrink: 0, marginTop: 2, color: 'var(--accent)' }}/> <div>Your API key is stored securely in Firestore and synced across your devices. It is only sent to Google's Gemini API during analysis.</div>
         </div>
       </MotionCard>
 
@@ -227,10 +231,10 @@ export default function Settings({ profile, setProfile, theme = 'dark', setTheme
           </span>
         </SectionTitle>
         <p style={{ fontSize: 12, color: 'var(--text2)', marginBottom: 12 }}>
-          This will permanently delete all your logs, workouts, runs, and profile data. This cannot be undone.
+          This will permanently delete all your logs, workouts, runs, and profile data from the cloud. This cannot be undone.
         </p>
         <Btn onClick={clearAllData} variant="danger" size="sm">
-          <Trash2 size={12} /> {confirmClear ? 'Click again to CONFIRM delete' : 'Clear all data'}
+          <Trash2 size={12} /> {confirmClear ? 'Click again to CONFIRM delete' : 'Clear all cloud data'}
         </Btn>
         {confirmClear && (
           <button onClick={() => setConfirmClear(false)} style={{ marginLeft: 8, background: 'none', border: 'none', cursor: 'pointer', fontSize: 12, color: 'var(--text3)' }}>

@@ -13,7 +13,7 @@ import AIFoodAnalyzer from '@/components/AIFoodAnalyzer.jsx'
 import History from '@/components/History.jsx'
 import Settings from '@/components/Settings.jsx'
 import AppDownload from '@/components/AppDownload.jsx'
-import { useProfile, useDailyLogs, useWorkouts, useRuns } from '@/hooks/useStorage.js'
+import { useProfile, useDailyLogs, useWorkouts, useRuns, useSettings } from '@/hooks/useStorage.js'
 import { useTheme } from '@/hooks/useTheme.js'
 import { LogOut } from 'lucide-react'
 
@@ -36,6 +36,21 @@ export default function DashboardPage() {
   const { workouts, addWorkout, deleteWorkout } = useWorkouts(user?.uid)
   const { runs, addRun, deleteRun } = useRuns(user?.uid)
   const [theme, setTheme] = useTheme()
+  const [settings, setSettings] = useSettings(user?.uid)
+
+  // Sync settings theme to local theme hook
+  useEffect(() => {
+    if (settings?.theme && settings.theme !== theme) {
+      setTheme(settings.theme)
+    }
+  }, [settings?.theme])
+
+  // Sync local theme changes back to settings
+  useEffect(() => {
+    if (theme && settings?.theme && theme !== settings.theme) {
+      setSettings({ ...settings, theme })
+    }
+  }, [theme])
 
   function handleAddFoodToLog(nutrition) {
     const todayLog = getTodayLog()
