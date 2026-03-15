@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import { formatLocalYYYYMMDD } from '../utils/calculations.js'
 import { auth } from '@/lib/firebase/config'
 
@@ -73,6 +73,7 @@ export async function saveToApi(collectionName, value, immediate = false) {
 
 export function useProfile(userId, userEmail) {
   const [profile, setProfileState] = useState(getDefaultProfile())
+  const profileRef = useRef(profile)
   const [isMounted, setIsMounted] = useState(false)
   const [loadingProfile, setLoadingProfile] = useState(true)
 
@@ -87,9 +88,11 @@ export function useProfile(userId, userEmail) {
     fetchApiData('PROFILE').then(data => {
       if (data) {
         setProfileState(data)
+        profileRef.current = data
       } else {
         const initial = getDefaultProfile()
         setProfileState(initial)
+        profileRef.current = initial
         saveToApi('PROFILE', initial)
       }
       setLoadingProfile(false)
@@ -97,12 +100,11 @@ export function useProfile(userId, userEmail) {
   }, [userId])
 
   const setProfile = useCallback(async (updater, options = { immediate: false }) => {
-    let nextValue;
-    setProfileState(prev => {
-      const next = typeof updater === 'function' ? updater(prev) : { ...prev, ...updater }
-      nextValue = next;
-      return next
-    })
+    const prev = profileRef.current;
+    const nextValue = typeof updater === 'function' ? updater(prev) : { ...prev, ...updater }
+    
+    profileRef.current = nextValue;
+    setProfileState(nextValue)
     
     if (isMounted && nextValue) {
       if (options.immediate) {
@@ -112,13 +114,14 @@ export function useProfile(userId, userEmail) {
       }
     }
     return nextValue;
-  }, [userId, isMounted])
+  }, [isMounted])
 
   return [profile, setProfile, loadingProfile]
 }
 
 export function useDailyLogs(userId) {
   const [logs, setLogsState] = useState({})
+  const logsRef = useRef({})
   const [isMounted, setIsMounted] = useState(false)
 
   useEffect(() => {
@@ -126,18 +129,24 @@ export function useDailyLogs(userId) {
     if (!userId) return
 
     fetchApiData('LOGS').then(data => {
-      if (data) setLogsState(data)
+      if (data) {
+        setLogsState(data)
+        logsRef.current = data
+      }
     })
   }, [userId])
 
   const setLog = useCallback((date, updater) => {
-    setLogsState(prev => {
-      const current = prev[date] || {}
-      const next = typeof updater === 'function' ? updater(current) : { ...current, ...updater }
-      const newLogs = { ...prev, [date]: next }
-      if (isMounted) saveToApi('LOGS', newLogs)
-      return newLogs
-    })
+    const prev = logsRef.current;
+    const current = prev[date] || {}
+    const next = typeof updater === 'function' ? updater(current) : { ...current, ...updater }
+    const newLogs = { ...prev, [date]: next }
+    
+    logsRef.current = newLogs;
+    setLogsState(newLogs);
+    
+    if (isMounted) saveToApi('LOGS', newLogs)
+    return newLogs
   }, [isMounted])
 
   const getLog = useCallback((date) => logs[date] || {}, [logs])
@@ -148,6 +157,7 @@ export function useDailyLogs(userId) {
 
 export function useWorkouts(userId) {
   const [workouts, setWorkoutsState] = useState([])
+  const workoutsRef = useRef([])
   const [isMounted, setIsMounted] = useState(false)
 
   useEffect(() => {
@@ -155,24 +165,29 @@ export function useWorkouts(userId) {
     if (!userId) return
 
     fetchApiData('WORKOUTS').then(data => {
-      if (data) setWorkoutsState(data)
+      if (data) {
+        setWorkoutsState(data)
+        workoutsRef.current = data
+      }
     })
   }, [userId])
 
   const addWorkout = useCallback((workout) => {
-    setWorkoutsState(prev => {
-      const next = [{ ...workout, id: Date.now(), date: workout.date || getToday() }, ...prev]
-      if (isMounted) saveToApi('WORKOUTS', next)
-      return next
-    })
+    const prev = workoutsRef.current;
+    const next = [{ ...workout, id: Date.now(), date: workout.date || getToday() }, ...prev]
+    workoutsRef.current = next;
+    setWorkoutsState(next);
+    if (isMounted) saveToApi('WORKOUTS', next)
+    return next
   }, [isMounted])
 
   const deleteWorkout = useCallback((id) => {
-    setWorkoutsState(prev => {
-      const next = prev.filter(w => w.id !== id)
-      if (isMounted) saveToApi('WORKOUTS', next)
-      return next
-    })
+    const prev = workoutsRef.current;
+    const next = prev.filter(w => w.id !== id)
+    workoutsRef.current = next;
+    setWorkoutsState(next);
+    if (isMounted) saveToApi('WORKOUTS', next)
+    return next
   }, [isMounted])
 
   return { workouts, addWorkout, deleteWorkout, isMounted }
@@ -180,6 +195,7 @@ export function useWorkouts(userId) {
 
 export function useRuns(userId) {
   const [runs, setRunsState] = useState([])
+  const runsRef = useRef([])
   const [isMounted, setIsMounted] = useState(false)
 
   useEffect(() => {
@@ -187,24 +203,29 @@ export function useRuns(userId) {
     if (!userId) return
 
     fetchApiData('RUNS').then(data => {
-      if (data) setRunsState(data)
+      if (data) {
+        setRunsState(data)
+        runsRef.current = data
+      }
     })
   }, [userId])
 
   const addRun = useCallback((run) => {
-    setRunsState(prev => {
-      const next = [{ ...run, id: Date.now(), date: run.date || getToday() }, ...prev]
-      if (isMounted) saveToApi('RUNS', next)
-      return next
-    })
+    const prev = runsRef.current;
+    const next = [{ ...run, id: Date.now(), date: run.date || getToday() }, ...prev]
+    runsRef.current = next;
+    setRunsState(next);
+    if (isMounted) saveToApi('RUNS', next)
+    return next
   }, [isMounted])
 
   const deleteRun = useCallback((id) => {
-    setRunsState(prev => {
-      const next = prev.filter(r => r.id !== id)
-      if (isMounted) saveToApi('RUNS', next)
-      return next
-    })
+    const prev = runsRef.current;
+    const next = prev.filter(r => r.id !== id)
+    runsRef.current = next;
+    setRunsState(next);
+    if (isMounted) saveToApi('RUNS', next)
+    return next
   }, [isMounted])
 
   return { runs, addRun, deleteRun, isMounted }
@@ -212,6 +233,7 @@ export function useRuns(userId) {
 
 export function useSettings(userId) {
   const [settings, setSettingsState] = useState({ theme: 'dark' })
+  const settingsRef = useRef({ theme: 'dark' })
   const [isMounted, setIsMounted] = useState(false)
 
   useEffect(() => {
@@ -221,18 +243,23 @@ export function useSettings(userId) {
     fetchApiData('SETTINGS').then(data => {
       if (data) {
         setSettingsState(data)
+        settingsRef.current = data
       } else {
-        saveToApi('SETTINGS', { theme: 'dark' })
+        const initial = { theme: 'dark' }
+        setSettingsState(initial)
+        settingsRef.current = initial
+        saveToApi('SETTINGS', initial)
       }
     })
   }, [userId])
 
   const setSettings = useCallback((updater) => {
-    setSettingsState(prev => {
-      const next = typeof updater === 'function' ? updater(prev) : { ...prev, ...updater }
-      if (isMounted) saveToApi('SETTINGS', next)
-      return next
-    })
+    const prev = settingsRef.current;
+    const next = typeof updater === 'function' ? updater(prev) : { ...prev, ...updater }
+    settingsRef.current = next;
+    setSettingsState(next);
+    if (isMounted) saveToApi('SETTINGS', next)
+    return next
   }, [isMounted])
 
   return [settings, setSettings]
