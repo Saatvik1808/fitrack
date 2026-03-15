@@ -5,12 +5,13 @@ import {
   BarElement, Title, Tooltip, Legend, Filler, ArcElement,
 } from 'chart.js'
 import { Line, Bar, Doughnut } from 'react-chartjs-2'
-import { Target, Flame, Dumbbell, Activity, Zap, Trophy, Moon, Info, Calendar, Droplets } from 'lucide-react'
+import { Target, Flame, Dumbbell, Activity, Zap, Trophy, Moon, Info, Calendar, Droplets, Bell, BellOff } from 'lucide-react'
 import { Card, StatCard, SectionTitle, ProgressBar, Badge, Grid, MotionCard, Modal } from './UI.jsx'
 import {
   calcBMI, bmiCategory, calcGoalProgress, getWeekDates, getLast30Days,
   formatDate, weeklyAvg, getStreakDays, formatLocalYYYYMMDD
 } from '../utils/calculations.js'
+import { useNotifications } from '../hooks/useNotifications.js'
 
 ChartJS.register(
   CategoryScale, LinearScale, PointElement, LineElement,
@@ -55,6 +56,7 @@ const chartDefaults = {
 
 export default function Dashboard({ logs, setLog, workouts, runs, profile }) {
   const [selectedAnalysis, setSelectedAnalysis] = useState(null)
+  const { permission, requestPermission } = useNotifications()
   
   const today = formatLocalYYYYMMDD()
   const todayLog = logs[today] || {}
@@ -605,7 +607,7 @@ export default function Dashboard({ logs, setLog, workouts, runs, profile }) {
     <div className="fade-in">
       {/* Hero stats */}
       <div style={{ marginBottom: '1.25rem', display: 'flex', flexDirection: 'column' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: 4 }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 4 }}>
           <div>
             <div style={{ fontSize: 12, color: 'var(--text3)', marginBottom: 2, fontWeight: 600, letterSpacing: '0.05em', textTransform: 'uppercase' }}>
               {new Date().toLocaleDateString('en-US', { weekday: 'short', day: 'numeric', month: 'short' })}
@@ -614,6 +616,13 @@ export default function Dashboard({ logs, setLog, workouts, runs, profile }) {
               Good {new Date().getHours() < 12 ? 'morning' : new Date().getHours() < 17 ? 'afternoon' : 'evening'}, {profile.name?.split(' ')[0]}
             </h1>
           </div>
+          
+          <button 
+            onClick={requestPermission}
+            title={permission === 'granted' ? "Notifications Active" : "Enable Meal Reminders"}
+            style={{ background: 'var(--bg2)', border: '1px solid var(--border)', padding: 8, borderRadius: 100, color: permission === 'granted' ? 'var(--accent)' : 'var(--text3)', cursor: 'pointer', display: 'flex' }}>
+            {permission === 'granted' ? <Bell size={18} /> : <BellOff size={18} />}
+          </button>
         </div>
         
         <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginTop: 2 }}>
