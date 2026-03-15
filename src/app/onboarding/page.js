@@ -21,6 +21,7 @@ export default function Onboarding() {
     height: '',
     activityLevel: 'moderate'
   })
+  const [isSaving, setIsSaving] = useState(false)
 
   // Redirect to login if unauthenticated
   useEffect(() => {
@@ -30,11 +31,12 @@ export default function Onboarding() {
   }, [user, loading, router])
 
   // If profile is already populated (e.g. Saatvik), go straight to Dashboard
+  // Ignore this check if actively saving, let handleSave do the routing securely.
   useEffect(() => {
-    if (!loadingProfile && profile && profile.currentWeight) {
+    if (!loadingProfile && profile && profile.currentWeight && !isSaving) {
       router.push('/dashboard')
     }
-  }, [profile, loadingProfile, router])
+  }, [profile, loadingProfile, isSaving, router])
 
   const calculateTargets = () => {
     const weight = Number(form.currentWeight)
@@ -65,6 +67,7 @@ export default function Onboarding() {
       return
     }
 
+    setIsSaving(true);
     const { calories, protein } = calculateTargets()
 
     await setProfile({
@@ -82,7 +85,7 @@ export default function Onboarding() {
     router.push('/dashboard')
   }
 
-  if (loading || loadingProfile || !user) {
+  if (loading || loadingProfile || isSaving || !user) {
     return (
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '100vh', background: 'var(--bg)' }}>
         <div style={{
