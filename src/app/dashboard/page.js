@@ -9,6 +9,7 @@ import Dashboard from '@/components/Dashboard.jsx'
 import DailyLog from '@/components/DailyLog.jsx'
 import WorkoutLogger from '@/components/WorkoutLogger.jsx'
 import RunningTracker from '@/components/RunningTracker.jsx'
+import RecoveryTracker from '@/components/RecoveryTracker.jsx'
 import AIFoodAnalyzer from '@/components/AIFoodAnalyzer.jsx'
 import History from '@/components/History.jsx'
 import Settings from '@/components/Settings.jsx'
@@ -129,6 +130,7 @@ export default function DashboardPage() {
   const pages = {
     dashboard: <Dashboard logs={logs} workouts={workouts} runs={runs} profile={profile} />,
     log: <DailyLog logs={logs} setLog={setLog} today={today} profile={profile} />,
+    recovery: <RecoveryTracker logs={logs} setLog={setLog} today={today} />,
     workout: <WorkoutLogger workouts={workouts} addWorkout={addWorkout} deleteWorkout={deleteWorkout} />,
     running: <RunningTracker runs={runs} addRun={addRun} deleteRun={deleteRun} profile={profile} />,
     ai: <AIFoodAnalyzer onAddToLog={handleAddFoodToLog} apiKey={profile.geminiApiKey} />,

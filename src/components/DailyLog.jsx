@@ -7,7 +7,6 @@ import { formatDateFull } from '../utils/calculations.js'
 const TABS = [
   { id: 'body', label: 'Body' },
   { id: 'nutrition', label: 'Nutrition' },
-  { id: 'recovery', label: 'Recovery' },
 ]
 
 const MOOD_OPTS = ['Terrible', 'Low', 'Okay', 'Good', 'Amazing']
@@ -73,7 +72,20 @@ export default function DailyLog({ logs, setLog, today, profile }) {
 
   function deleteMeal(id) {
     const updated = meals.filter(m => m.id !== id)
-    setLog(date, { meals: updated })
+    const total = updated.reduce((acc, m) => ({
+      calories: acc.calories + (Number(m.calories) || 0),
+      protein: acc.protein + (Number(m.protein) || 0),
+      carbs: acc.carbs + (Number(m.carbs) || 0),
+      fat: acc.fat + (Number(m.fat) || 0),
+    }), { calories: 0, protein: 0, carbs: 0, fat: 0 })
+    
+    setLog(date, { 
+      meals: updated,
+      calories: total.calories || '',
+      protein: total.protein || '',
+      carbs: total.carbs || '',
+      fat: total.fat || '',
+    })
   }
 
   return (
@@ -178,9 +190,6 @@ export default function DailyLog({ logs, setLog, today, profile }) {
                   <input type="number" placeholder="47" value={log.fat || ''} onChange={e => update('fat', e.target.value)} />
                 </InputRow>
               </Grid>
-              <InputRow label="Water" hint="litres">
-                <input type="number" placeholder="3.5" step="0.25" value={log.water || ''} onChange={e => update('water', e.target.value)} />
-              </InputRow>
             </Card>
 
             <Card>
@@ -215,66 +224,6 @@ export default function DailyLog({ logs, setLog, today, profile }) {
                 </div>
               ))}
             </Card>
-          </motion.div>
-        )}
-
-        {/* RECOVERY */}
-        {tab === 'recovery' && (
-          <motion.div
-            key="recovery"
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -10 }}
-            transition={{ duration: 0.2 }}
-          >
-          <Card>
-            <SectionTitle>Recovery & Wellness</SectionTitle>
-            <InputRow label="Sleep Duration" hint="hours">
-              <input type="number" placeholder="7.5" step="0.5" min="0" max="24" value={log.sleep || ''} onChange={e => update('sleep', e.target.value)} />
-            </InputRow>
-            <Divider />
-            <div style={{ marginBottom: 20 }}>
-              <RangeInput
-                label="Energy Level"
-                value={log.energy || 5}
-                min={1} max={5}
-                color="var(--yellow)"
-                onChange={v => update('energy', v)}
-              />
-              <div style={{ fontSize: 11, color: 'var(--text3)', marginTop: 4, textAlign: 'right' }}>
-                {ENERGY_LABELS[(log.energy || 5) - 1]}
-              </div>
-            </div>
-            <Divider />
-            <div style={{ marginBottom: 16 }}>
-              <div style={{ fontSize: 12, color: 'var(--text2)', fontWeight: 500, marginBottom: 8 }}>Mood</div>
-              <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
-                {MOOD_OPTS.map(m => (
-                  <button
-                    key={m}
-                    onClick={() => update('mood', m)}
-                    style={{
-                      padding: '6px 12px',
-                      borderRadius: 20,
-                      fontSize: 12,
-                      fontFamily: 'inherit',
-                      cursor: 'pointer',
-                      border: log.mood === m ? '1px solid var(--accent)' : '1px solid var(--border)',
-                      background: log.mood === m ? 'var(--accent)22' : 'var(--bg3)',
-                      color: log.mood === m ? 'var(--accent2)' : 'var(--text2)',
-                      transition: 'all 0.15s',
-                    }}
-                  >
-                    {m}
-                  </button>
-                ))}
-              </div>
-            </div>
-            <Divider />
-            <InputRow label="Recovery notes">
-              <textarea rows={3} placeholder="How are you feeling? Any soreness, stress, etc..." value={log.recoveryNotes || ''} onChange={e => update('recoveryNotes', e.target.value)} style={{ resize: 'vertical' }} />
-            </InputRow>
-          </Card>
           </motion.div>
         )}
         </AnimatePresence>

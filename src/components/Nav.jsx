@@ -1,13 +1,14 @@
 import React, { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { LayoutDashboard, ClipboardList, Dumbbell, Activity, Bot, History, Settings, Download, MoreHorizontal, X, LogOut } from 'lucide-react'
+import { LayoutDashboard, ClipboardList, Dumbbell, Activity, Bot, History, Settings, Download, MoreHorizontal, X, LogOut, Droplets } from 'lucide-react'
 
 const NAV = [
   { id: 'dashboard', icon: LayoutDashboard, label: 'Dashboard', mobile: true },
   { id: 'log', icon: ClipboardList, label: 'Log', mobile: true },
+  { id: 'recovery', icon: Droplets, label: 'Recovery', mobile: true },
   { id: 'workout', icon: Dumbbell, label: 'Workout', mobile: true },
-  { id: 'running', icon: Activity, label: 'Running', mobile: true },
-  { id: 'ai', icon: Bot, label: 'AI Food', mobile: true },
+  { id: 'running', icon: Activity, label: 'Running', mobile: false },
+  { id: 'ai', icon: Bot, label: 'AI Food', mobile: false },
   { id: 'history', icon: History, label: 'History', mobile: false },
   { id: 'settings', icon: Settings, label: 'Settings', mobile: false },
   { id: 'download', icon: Download, label: 'Download', mobile: false },
