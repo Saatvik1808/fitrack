@@ -21,7 +21,7 @@ function getDefaultProfile() {
 }
 
 async function fetchApiData(collectionName) {
-  if (!auth.currentUser) return null;
+  if (!auth || !auth.currentUser) return null;
   const token = await auth.currentUser.getIdToken();
   const res = await fetch(`/api/data?collection=${collectionName}&t=${Date.now()}`, {
     headers: { 
@@ -39,7 +39,7 @@ async function fetchApiData(collectionName) {
 
 const dbTimeouts = {}
 export async function saveToApi(collectionName, value, immediate = false) {
-  if (!auth.currentUser || !collectionName) return
+  if (!auth || !auth.currentUser || !collectionName) return
 
   const executeSave = async () => {
     try {
@@ -287,7 +287,7 @@ export async function clearAllUserData(userId) {
 }
 
 export async function exportData(userId) {
-  if (!userId || !auth.currentUser) {
+  if (!userId || !auth || !auth.currentUser) {
     alert("Must be logged in to export data.")
     return
   }

@@ -97,7 +97,7 @@ export default function DashboardPage() {
 
   // Check if profile is completely empty
   useEffect(() => {
-    if (!loading && user && !loadingProfile && profile && !profile.currentWeight) {
+    if (!loading && user && !loadingProfile && profile && !profile.currentWeight && !window?.location?.search?.includes('bypass=true')) {
       router.push('/onboarding')
     }
   }, [user, loading, profile, loadingProfile, router])

@@ -127,12 +127,12 @@ export function StatCard({ label, value, unit, sub, color = 'var(--accent)', ico
     <MotionCard onClick={onClick} delay={delay} style={{ padding: '1.25rem' }}>
       <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between' }}>
         <div>
-          <div style={{ fontSize: 11, color: 'var(--text2)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 8, fontWeight: 600 }}>{label}</div>
-          <div style={{ fontSize: 26, fontWeight: 700, color: 'var(--text)', lineHeight: 1, marginBottom: 4 }}>
+          <div style={{ fontSize: 10, color: 'var(--text3)', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 6, fontWeight: 700 }}>{label}</div>
+          <div style={{ fontSize: 24, fontWeight: 800, color: 'var(--text)', lineHeight: 1, marginBottom: 4 }}>
             {value ?? '—'}
-            {unit && <span style={{ fontSize: 13, fontWeight: 500, color: 'var(--text3)', marginLeft: 4 }}>{unit}</span>}
+            {unit && <span style={{ fontSize: 12, fontWeight: 500, color: 'var(--text3)', marginLeft: 3 }}>{unit}</span>}
           </div>
-          {sub && <div style={{ fontSize: 11, color: color, fontWeight: 500 }}>{sub}</div>}
+          {sub && <div style={{ fontSize: 11, color: color, fontWeight: 600, letterSpacing: '0.01em' }}>{sub}</div>}
         </div>
         {Icon && (
           <div style={{
@@ -191,8 +191,8 @@ export function Btn({ children, onClick, variant = 'primary', size = 'md', disab
 
 export function SectionTitle({ children, action }) {
   return (
-    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1rem' }}>
-      <h2 style={{ fontSize: 16, fontWeight: 600, color: 'var(--text)' }}>{children}</h2>
+    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.75rem' }}>
+      <h2 style={{ fontSize: 14, fontWeight: 700, color: 'var(--text)', letterSpacing: '0.01em', textTransform: 'uppercase', opacity: 0.9 }}>{children}</h2>
       {action}
     </div>
   )
@@ -262,13 +262,14 @@ export function ProgressBar({ value, max = 100, color = 'var(--accent)', label, 
           {showPct && <span style={{ fontWeight: 600, color }}>{Math.round(pct)}%</span>}
         </div>
       )}
-      <div style={{ height: 6, background: 'var(--bg4)', borderRadius: 100, overflow: 'hidden' }}>
+      <div style={{ height: 8, background: 'var(--bg4)', borderRadius: 100, overflow: 'hidden' }}>
         <div style={{
           height: '100%',
           width: pct + '%',
           background: color,
           borderRadius: 100,
-          transition: 'width 0.5s ease',
+          transition: 'width 0.8s cubic-bezier(0.34, 1.56, 0.64, 1)',
+          boxShadow: `0 0 10px ${color}33`
         }} />
       </div>
     </div>
