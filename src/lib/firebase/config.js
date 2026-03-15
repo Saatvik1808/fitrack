@@ -1,6 +1,5 @@
 import { initializeApp, getApps, getApp } from 'firebase/app';
 import { getAuth, GoogleAuthProvider } from 'firebase/auth';
-import { getFirestore } from 'firebase/firestore';
 
 const firebaseConfig = {
   apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
@@ -15,16 +14,14 @@ const firebaseConfig = {
 // Wrap in try/catch so the app doesn't hard-crash when env vars are missing
 let app = null;
 let auth = null;
-let db = null;
 let googleProvider = null;
 
 try {
   app = !getApps().length ? initializeApp(firebaseConfig) : getApp();
   auth = getAuth(app);
-  db = getFirestore(app);
   googleProvider = new GoogleAuthProvider();
 } catch (error) {
   console.warn('Firebase initialization failed — ensure .env.local is configured:', error.message);
 }
 
-export { app, auth, db, googleProvider };
+export { app, auth, googleProvider };

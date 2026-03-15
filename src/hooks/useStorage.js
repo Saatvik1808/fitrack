@@ -1,7 +1,6 @@
 import { useState, useEffect, useCallback } from 'react'
-import { doc, setDoc, onSnapshot, getDoc } from 'firebase/firestore'
-import { db } from '@/lib/firebase/config'
 import { formatLocalYYYYMMDD } from '../utils/calculations.js'
+import { auth } from '@/lib/firebase/config'
 
 function getToday() {
   return formatLocalYYYYMMDD()
@@ -21,78 +20,40 @@ function getDefaultProfile() {
   }
 }
 
-const LEGACY_BASE_KEYS = {
-  LOGS: 'fittrack_logs',
-  WORKOUTS: 'fittrack_workouts',
-  RUNS: 'fittrack_runs',
-  PROFILE: 'fittrack_profile',
-}
-
-function getLegacyUserKeys(userId) {
-  return {
-    LOGS: `fittrack_${userId}_logs`,
-    WORKOUTS: `fittrack_${userId}_workouts`,
-    RUNS: `fittrack_${userId}_runs`,
-    PROFILE: `fittrack_${userId}_profile`,
+async function fetchApiData(collectionName) {
+  if (!auth.currentUser) return null;
+  const token = await auth.currentUser.getIdToken();
+  const res = await fetch(`/api/data?collection=${collectionName}`, {
+    headers: { 'Authorization': `Bearer ${token}` }
+  });
+  if (res.ok) {
+    return await res.json();
   }
+  return null;
 }
 
-async function migrateLocalStorageToFirestore(userId) {
-  if (!userId || !db) return
-  const migrationFlag = `fittrack_migrated_${userId}`
-  if (localStorage.getItem(migrationFlag)) return
-
-  console.log("Starting one-time migration to Firestore...")
-  const legacyUserKeys = getLegacyUserKeys(userId)
-  const collections = ['PROFILE', 'LOGS', 'WORKOUTS', 'RUNS']
-
-  for (const coll of collections) {
-    const unscopedKey = LEGACY_BASE_KEYS[coll]
-    const scopedKey = legacyUserKeys[coll]
-    
-    const localRaw = localStorage.getItem(scopedKey) || localStorage.getItem(unscopedKey)
-    if (!localRaw) continue
-
-    try {
-      const localData = JSON.parse(localRaw)
-      const docRef = doc(db, 'users', userId, 'data', coll)
-      const snap = await getDoc(docRef)
-      let remoteData = snap.exists() ? snap.data().data : null
-
-      let merged = localData
-      if (remoteData) {
-        if (Array.isArray(localData) && Array.isArray(remoteData)) {
-          // Merge arrays (Workouts, Runs) by ID or just unique
-          const seen = new Set(remoteData.map(i => i.id))
-          merged = [...remoteData, ...localData.filter(i => !seen.has(i.id))]
-        } else if (typeof localData === 'object' && localData !== null) {
-          // Shallow merge objects (Profile, Logs)
-          merged = { ...localData, ...remoteData }
-        }
-      }
-
-      await setDoc(docRef, { data: merged }, { merge: true })
-      console.log(`Migrated ${coll} to Firestore.`)
-    } catch (e) {
-      console.error(`Migration error for ${coll}:`, e)
-    }
-  }
-
-  localStorage.setItem(migrationFlag, 'true')
-}
-
-// Background save helper (no local storage)
 const dbTimeouts = {}
-function saveToDb(userId, collectionName, value) {
-  if (!userId || !db || !collectionName) return
+function saveToApi(collectionName, value) {
+  if (!auth.currentUser || !collectionName) return
 
   if (dbTimeouts[collectionName]) {
     clearTimeout(dbTimeouts[collectionName])
   }
   
-  dbTimeouts[collectionName] = setTimeout(() => {
-    const docRef = doc(db, 'users', userId, 'data', collectionName)
-    setDoc(docRef, { data: value }, { merge: true }).catch(err => console.error("Firestore sync error:", err))
+  dbTimeouts[collectionName] = setTimeout(async () => {
+    try {
+      const token = await auth.currentUser.getIdToken();
+      await fetch('/api/data', {
+        method: 'POST',
+        headers: { 
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}` 
+        },
+        body: JSON.stringify({ collectionName, data: value })
+      });
+    } catch (err) {
+      console.error("API sync error:", err)
+    }
   }, 1000)
 }
 
@@ -102,34 +63,23 @@ export function useProfile(userId, userEmail) {
 
   useEffect(() => {
     setIsMounted(true)
-    if (!userId || !db) return
+    if (!userId) return
 
-    const docRef = doc(db, 'users', userId, 'data', 'PROFILE')
-    const unsubscribe = onSnapshot(docRef, (snap) => {
-      if (snap.exists() && snap.data().data) {
-        setProfileState(snap.data().data)
+    fetchApiData('PROFILE').then(data => {
+      if (data) {
+        setProfileState(data)
       } else {
-        // Init if empty
         const initial = getDefaultProfile()
         setProfileState(initial)
-        setDoc(docRef, { data: initial }, { merge: true })
+        saveToApi('PROFILE', initial)
       }
     })
-
-    return () => unsubscribe()
-  }, [userId])
-
-  // One-time migration trigger
-  useEffect(() => {
-    if (userId) {
-      migrateLocalStorageToFirestore(userId)
-    }
   }, [userId])
 
   const setProfile = useCallback((updater) => {
     setProfileState(prev => {
       const next = typeof updater === 'function' ? updater(prev) : { ...prev, ...updater }
-      if (isMounted) saveToDb(userId, 'PROFILE', next)
+      if (isMounted) saveToApi('PROFILE', next)
       return next
     })
   }, [userId, isMounted])
@@ -143,18 +93,11 @@ export function useDailyLogs(userId) {
 
   useEffect(() => {
     setIsMounted(true)
-    if (!userId || !db) return
+    if (!userId) return
 
-    const docRef = doc(db, 'users', userId, 'data', 'LOGS')
-    const unsubscribe = onSnapshot(docRef, (snap) => {
-      if (snap.exists() && snap.data().data) {
-        setLogsState(snap.data().data)
-      } else {
-        setLogsState({})
-      }
+    fetchApiData('LOGS').then(data => {
+      if (data) setLogsState(data)
     })
-
-    return () => unsubscribe()
   }, [userId])
 
   const setLog = useCallback((date, updater) => {
@@ -162,10 +105,10 @@ export function useDailyLogs(userId) {
       const current = prev[date] || {}
       const next = typeof updater === 'function' ? updater(current) : { ...current, ...updater }
       const newLogs = { ...prev, [date]: next }
-      if (isMounted) saveToDb(userId, 'LOGS', newLogs)
+      if (isMounted) saveToApi('LOGS', newLogs)
       return newLogs
     })
-  }, [userId, isMounted])
+  }, [isMounted])
 
   const getLog = useCallback((date) => logs[date] || {}, [logs])
   const getTodayLog = useCallback(() => getLog(getToday()), [getLog])
@@ -179,35 +122,28 @@ export function useWorkouts(userId) {
 
   useEffect(() => {
     setIsMounted(true)
-    if (!userId || !db) return
+    if (!userId) return
 
-    const docRef = doc(db, 'users', userId, 'data', 'WORKOUTS')
-    const unsubscribe = onSnapshot(docRef, (snap) => {
-      if (snap.exists() && snap.data().data) {
-        setWorkoutsState(snap.data().data)
-      } else {
-        setWorkoutsState([])
-      }
+    fetchApiData('WORKOUTS').then(data => {
+      if (data) setWorkoutsState(data)
     })
-
-    return () => unsubscribe()
   }, [userId])
 
   const addWorkout = useCallback((workout) => {
     setWorkoutsState(prev => {
       const next = [{ ...workout, id: Date.now(), date: workout.date || getToday() }, ...prev]
-      if (isMounted) saveToDb(userId, 'WORKOUTS', next)
+      if (isMounted) saveToApi('WORKOUTS', next)
       return next
     })
-  }, [userId, isMounted])
+  }, [isMounted])
 
   const deleteWorkout = useCallback((id) => {
     setWorkoutsState(prev => {
       const next = prev.filter(w => w.id !== id)
-      if (isMounted) saveToDb(userId, 'WORKOUTS', next)
+      if (isMounted) saveToApi('WORKOUTS', next)
       return next
     })
-  }, [userId, isMounted])
+  }, [isMounted])
 
   return { workouts, addWorkout, deleteWorkout, isMounted }
 }
@@ -218,35 +154,28 @@ export function useRuns(userId) {
 
   useEffect(() => {
     setIsMounted(true)
-    if (!userId || !db) return
+    if (!userId) return
 
-    const docRef = doc(db, 'users', userId, 'data', 'RUNS')
-    const unsubscribe = onSnapshot(docRef, (snap) => {
-      if (snap.exists() && snap.data().data) {
-        setRunsState(snap.data().data)
-      } else {
-        setRunsState([])
-      }
+    fetchApiData('RUNS').then(data => {
+      if (data) setRunsState(data)
     })
-
-    return () => unsubscribe()
   }, [userId])
 
   const addRun = useCallback((run) => {
     setRunsState(prev => {
       const next = [{ ...run, id: Date.now(), date: run.date || getToday() }, ...prev]
-      if (isMounted) saveToDb(userId, 'RUNS', next)
+      if (isMounted) saveToApi('RUNS', next)
       return next
     })
-  }, [userId, isMounted])
+  }, [isMounted])
 
   const deleteRun = useCallback((id) => {
     setRunsState(prev => {
       const next = prev.filter(r => r.id !== id)
-      if (isMounted) saveToDb(userId, 'RUNS', next)
+      if (isMounted) saveToApi('RUNS', next)
       return next
     })
-  }, [userId, isMounted])
+  }, [isMounted])
 
   return { runs, addRun, deleteRun, isMounted }
 }
@@ -257,44 +186,38 @@ export function useSettings(userId) {
 
   useEffect(() => {
     setIsMounted(true)
-    if (!userId || !db) return
+    if (!userId) return
 
-    const docRef = doc(db, 'users', userId, 'data', 'SETTINGS')
-    const unsubscribe = onSnapshot(docRef, (snap) => {
-      if (snap.exists() && snap.data().data) {
-        setSettingsState(snap.data().data)
+    fetchApiData('SETTINGS').then(data => {
+      if (data) {
+        setSettingsState(data)
       } else {
-        const initial = { theme: 'dark' }
-        setSettingsState(initial)
-        setDoc(docRef, { data: initial }, { merge: true })
+        saveToApi('SETTINGS', { theme: 'dark' })
       }
     })
-
-    return () => unsubscribe()
   }, [userId])
 
   const setSettings = useCallback((updater) => {
     setSettingsState(prev => {
       const next = typeof updater === 'function' ? updater(prev) : { ...prev, ...updater }
-      if (isMounted) saveToDb(userId, 'SETTINGS', next)
+      if (isMounted) saveToApi('SETTINGS', next)
       return next
     })
-  }, [userId, isMounted])
+  }, [isMounted])
 
   return [settings, setSettings]
 }
 
 export async function clearAllUserData(userId) {
-  if (!userId || !db) return
+  if (!userId) return
   const collections = ['PROFILE', 'LOGS', 'WORKOUTS', 'RUNS', 'SETTINGS']
   for (const coll of collections) {
-    const docRef = doc(db, 'users', userId, 'data', coll)
-    await setDoc(docRef, { data: null }, { merge: true })
+    saveToApi(coll, null)
   }
 }
 
 export async function exportData(userId) {
-  if (!userId || !db) {
+  if (!userId || !auth.currentUser) {
     alert("Must be logged in to export data.")
     return
   }
@@ -310,13 +233,12 @@ export async function exportData(userId) {
 
     const collections = ['PROFILE', 'LOGS', 'WORKOUTS', 'RUNS']
     for (const coll of collections) {
-      const docRef = doc(db, 'users', userId, 'data', coll)
-      const snap = await getDoc(docRef)
-      if (snap.exists() && snap.data().data) {
-        if (coll === 'PROFILE') data.profile = snap.data().data
-        if (coll === 'LOGS') data.logs = snap.data().data
-        if (coll === 'WORKOUTS') data.workouts = snap.data().data
-        if (coll === 'RUNS') data.runs = snap.data().data
+      const collData = await fetchApiData(coll)
+      if (collData) {
+        if (coll === 'PROFILE') data.profile = collData
+        if (coll === 'LOGS') data.logs = collData
+        if (coll === 'WORKOUTS') data.workouts = collData
+        if (coll === 'RUNS') data.runs = collData
       }
     }
 

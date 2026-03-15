@@ -1,8 +1,7 @@
 "use client";
 import { createContext, useContext, useEffect, useState } from 'react';
 import { onAuthStateChanged, signInWithPopup, signOut } from 'firebase/auth';
-import { doc, getDoc, setDoc } from 'firebase/firestore';
-import { auth, db, googleProvider } from '@/lib/firebase/config';
+import { auth, googleProvider } from '@/lib/firebase/config';
 
 const AuthContext = createContext({});
 
@@ -11,26 +10,20 @@ export function AuthProvider({ children }) {
   const [userProfile, setUserProfile] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  // Load user profile from Firestore
+  // The root user profile is managed directly via the API now or we can just fetch the detailed PROFILE block.
+  // For basic info, we don't strictly need a separate root document if everything is in /data/PROFILE.
   const loadUserProfile = async (currentUser) => {
     try {
-      const docRef = doc(db, 'users', currentUser.uid);
-      const docSnap = await getDoc(docRef);
-      if (docSnap.exists()) {
-        setUserProfile(docSnap.data());
-        return docSnap.data();
-      } else {
-        // Create basic user doc so the user is visible in the Firebase console
-        const basicInfo = { 
-          email: currentUser.email, 
-          displayName: currentUser.displayName, 
-          photoURL: currentUser.photoURL, 
-          createdAt: new Date().toISOString() 
-        };
-        await setDoc(docRef, basicInfo, { merge: true });
-        setUserProfile(basicInfo);
-        return basicInfo;
-      }
+      const token = await currentUser.getIdToken();
+      // Ensure the user root document/basic profile exists via an API call
+      // For now, setting userProfile to the currentUser object is usually enough for the UI (name, photo)
+      const basicInfo = { 
+        email: currentUser.email, 
+        displayName: currentUser.displayName, 
+        photoURL: currentUser.photoURL, 
+      };
+      setUserProfile(basicInfo);
+      return basicInfo;
     } catch (error) {
       console.error("Error loading user profile:", error);
     }
@@ -74,8 +67,15 @@ export function AuthProvider({ children }) {
     }
   };
 
+  const getToken = async () => {
+    if (user) {
+      return await user.getIdToken();
+    }
+    return null;
+  };
+
   return (
-    <AuthContext.Provider value={{ user, userProfile, loginWithGoogle, logout, loadUserProfile, loading }}>
+    <AuthContext.Provider value={{ user, userProfile, loginWithGoogle, logout, loadUserProfile, loading, getToken }}>
         {children}
     </AuthContext.Provider>
   );
