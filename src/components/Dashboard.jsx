@@ -637,33 +637,33 @@ export default function Dashboard({ logs, setLog, workouts, runs, profile }) {
       </div>
 
       {/* Main Goal Circular Progress */}
-      <MotionCard delay={0.1} onClick={() => setSelectedAnalysis('goal')} className="glass-card" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '2rem 1.25rem', marginBottom: '1.25rem' }}>
-        <div style={{ position: 'relative', width: 220, height: 220, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-          {/* Background Track */}
-          <svg style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', transform: 'rotate(-90deg)' }}>
-            <defs>
-              <linearGradient id="ringGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-                <stop offset="0%" stopColor="#7C5CFF" />   {/* gradient purple */}
-                <stop offset="100%" stopColor="#4F8CFF" /> {/* gradient blue */}
-              </linearGradient>
-              <filter id="glow">
-                <feGaussianBlur stdDeviation="6" result="coloredBlur"/>
-                <feMerge>
-                  <feMergeNode in="coloredBlur"/>
-                  <feMergeNode in="SourceGraphic"/>
-                </feMerge>
-              </filter>
-            </defs>
-            <circle cx="110" cy="110" r="96" fill="none" stroke="var(--bg4)" strokeWidth="18" opacity={0.3} />
-            <circle cx="110" cy="110" r="96" fill="none" stroke="url(#ringGrad)" strokeWidth="18" strokeDasharray={`${2 * Math.PI * 96}`} strokeDashoffset={mounted ? `${2 * Math.PI * 96 * (1 - (goalPct / 100))}` : `${2 * Math.PI * 96}`} strokeLinecap="round" style={{ transition: 'stroke-dashoffset 1.5s cubic-bezier(0.34, 1.56, 0.64, 1)', filter: 'url(#glow)' }} />
-          </svg>
-          
-          <div style={{ textAlign: 'center', zIndex: 10 }}>
-            <div style={{ fontSize: 12, color: 'var(--text3)', fontWeight: 600, letterSpacing: '0.05em', marginBottom: 2 }}>CURRENT</div>
-            <div style={{ fontSize: 48, fontWeight: 800, color: 'var(--text)', lineHeight: 1 }}>{safeWeight}</div>
-            <div style={{ fontSize: 14, color: 'var(--text3)', fontWeight: 500, marginTop: 4 }}>kg</div>
+        <MotionCard delay={0.1} onClick={() => setSelectedAnalysis('goal')} className="glass-card" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '2rem 1.25rem', marginBottom: '1.25rem' }}>
+          <div style={{ position: 'relative', width: 220, height: 220, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            {/* Background Track */}
+            <svg style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', transform: 'rotate(-90deg)' }}>
+              <defs>
+                <linearGradient id="ringGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                  <stop offset="0%" stopColor="#7C5CFF" />   {/* gradient purple */}
+                  <stop offset="100%" stopColor="#4F8CFF" /> {/* gradient blue */}
+                </linearGradient>
+                <filter id="glow">
+                  <feGaussianBlur stdDeviation="6" result="coloredBlur"/>
+                  <feMerge>
+                    <feMergeNode in="coloredBlur"/>
+                    <feMergeNode in="SourceGraphic"/>
+                  </feMerge>
+                </filter>
+              </defs>
+              <circle cx="110" cy="110" r="96" fill="none" stroke="rgba(124, 92, 255, 0.15)" strokeWidth="18" />
+              <circle cx="110" cy="110" r="96" fill="none" stroke="url(#ringGrad)" strokeWidth="18" strokeDasharray={`${2 * Math.PI * 96}`} strokeDashoffset={mounted ? `${2 * Math.PI * 96 * (1 - (Math.max(goalPct, 2) / 100))}` : `${2 * Math.PI * 96}`} strokeLinecap="round" style={{ transition: 'stroke-dashoffset 1.5s cubic-bezier(0.34, 1.56, 0.64, 1)', filter: 'url(#glow)' }} />
+            </svg>
+            
+            <div style={{ textAlign: 'center', zIndex: 10 }}>
+              <div style={{ fontSize: 12, color: 'var(--text3)', fontWeight: 600, letterSpacing: '0.05em', marginBottom: 2 }}>CURRENT</div>
+              <div style={{ fontSize: 48, fontWeight: 800, color: 'var(--text)', lineHeight: 1 }}>{safeWeight}</div>
+              <div style={{ fontSize: 14, color: 'var(--text3)', fontWeight: 500, marginTop: 4 }}>kg</div>
+            </div>
           </div>
-        </div>
 
         <div style={{ display: 'flex', justifyContent: 'space-between', width: '100%', marginTop: 32, padding: '0 1rem' }}>
           <div style={{ textAlign: 'center' }}>
