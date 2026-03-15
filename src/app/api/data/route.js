@@ -33,8 +33,8 @@ export async function GET(req) {
     if (docSnap.exists) {
       return NextResponse.json(docSnap.data().data);
     } else {
-      // Return 404 so client knows it's empty/doesn't exist and can create a default
-      return NextResponse.json(null, { status: 404 });
+      // Return 200 with null so client knows it's empty without throwing a fetch error
+      return NextResponse.json(null, { status: 200 });
     }
   } catch (error) {
     console.error("GET API Error:", error);
