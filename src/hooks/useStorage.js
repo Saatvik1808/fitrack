@@ -67,11 +67,16 @@ export async function saveToApi(collectionName, value, immediate = false) {
 export function useProfile(userId, userEmail) {
   const [profile, setProfileState] = useState(getDefaultProfile())
   const [isMounted, setIsMounted] = useState(false)
+  const [loadingProfile, setLoadingProfile] = useState(true)
 
   useEffect(() => {
     setIsMounted(true)
-    if (!userId) return
+    if (!userId) {
+      setLoadingProfile(false)
+      return
+    }
 
+    setLoadingProfile(true)
     fetchApiData('PROFILE').then(data => {
       if (data) {
         setProfileState(data)
@@ -80,6 +85,7 @@ export function useProfile(userId, userEmail) {
         setProfileState(initial)
         saveToApi('PROFILE', initial)
       }
+      setLoadingProfile(false)
     })
   }, [userId])
 
@@ -101,7 +107,7 @@ export function useProfile(userId, userEmail) {
     return nextValue;
   }, [userId, isMounted])
 
-  return [profile, setProfile]
+  return [profile, setProfile, loadingProfile]
 }
 
 export function useDailyLogs(userId) {

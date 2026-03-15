@@ -12,7 +12,7 @@ import { Card, SectionTitle, InputRow, Btn } from '@/components/UI'
 export default function Onboarding() {
   const { user, loading } = useAuth()
   const router = useRouter()
-  const [profile, setProfile] = useProfile(user?.uid, user?.email)
+  const [profile, setProfile, loadingProfile] = useProfile(user?.uid, user?.email)
   
   const [form, setForm] = useState({
     name: '',
@@ -31,10 +31,10 @@ export default function Onboarding() {
 
   // If profile is already populated (e.g. Saatvik), go straight to Dashboard
   useEffect(() => {
-    if (profile && profile.currentWeight) {
+    if (!loadingProfile && profile && profile.currentWeight) {
       router.push('/dashboard')
     }
-  }, [profile, router])
+  }, [profile, loadingProfile, router])
 
   const calculateTargets = () => {
     const weight = Number(form.currentWeight)
@@ -82,7 +82,19 @@ export default function Onboarding() {
     router.push('/dashboard')
   }
 
-  if (loading || !user) return null
+  if (loading || loadingProfile || !user) {
+    return (
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '100vh', background: 'var(--bg)' }}>
+        <div style={{
+          width: 32, height: 32,
+          border: '3px solid var(--border)',
+          borderTop: '3px solid var(--accent)',
+          borderRadius: '50%',
+          animation: 'spin 0.8s linear infinite',
+        }} />
+      </div>
+    )
+  }
 
   return (
     <div style={{

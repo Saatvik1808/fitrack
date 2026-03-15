@@ -32,7 +32,7 @@ export default function DashboardPage() {
   const [page, setPage] = useState('dashboard')
   
   // Pass userId and email to hooks for data isolation and migration
-  const [profile, setProfile] = useProfile(user?.uid, user?.email)
+  const [profile, setProfile, loadingProfile] = useProfile(user?.uid, user?.email)
   const { logs, setLog, getLog, getTodayLog, today } = useDailyLogs(user?.uid)
   const { workouts, addWorkout, deleteWorkout } = useWorkouts(user?.uid)
   const { runs, addRun, deleteRun } = useRuns(user?.uid)
@@ -95,25 +95,15 @@ export default function DashboardPage() {
     }
   }
 
-  const [dbChecked, setDbChecked] = useState(false)
-  
-  // Give background DB sync time to complete before forcing onboarding on new devices
-  useEffect(() => {
-    if (user) {
-      const timer = setTimeout(() => setDbChecked(true), 1500)
-      return () => clearTimeout(timer)
-    }
-  }, [user])
-
   // Check if profile is completely empty
   useEffect(() => {
-    if (!loading && user && dbChecked && profile && !profile.currentWeight) {
+    if (!loading && user && !loadingProfile && profile && !profile.currentWeight) {
       router.push('/onboarding')
     }
-  }, [user, loading, profile, router, dbChecked])
+  }, [user, loading, profile, loadingProfile, router])
 
   // Show loading while checking auth or waiting for sync
-  if (loading || !user || (!profile?.currentWeight && !dbChecked)) {
+  if (loading || loadingProfile || !user || !profile?.currentWeight) {
     return (
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '100vh' }}>
         <div style={{
