@@ -23,8 +23,13 @@ function getDefaultProfile() {
 async function fetchApiData(collectionName) {
   if (!auth.currentUser) return null;
   const token = await auth.currentUser.getIdToken();
-  const res = await fetch(`/api/data?collection=${collectionName}`, {
-    headers: { 'Authorization': `Bearer ${token}` }
+  const res = await fetch(`/api/data?collection=${collectionName}&t=${Date.now()}`, {
+    headers: { 
+      'Authorization': `Bearer ${token}`,
+      'Cache-Control': 'no-cache',
+      'Pragma': 'no-cache'
+    },
+    cache: 'no-store'
   });
   if (res.ok) {
     return await res.json();
@@ -43,9 +48,11 @@ export async function saveToApi(collectionName, value, immediate = false) {
         method: 'POST',
         headers: { 
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}` 
+          'Authorization': `Bearer ${token}`,
+          'Cache-Control': 'no-cache'
         },
-        body: JSON.stringify({ collectionName, data: value })
+        body: JSON.stringify({ collectionName, data: value }),
+        cache: 'no-store'
       });
     } catch (err) {
       console.error("API sync error:", err)
