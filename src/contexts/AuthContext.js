@@ -32,6 +32,15 @@ export function AuthProvider({ children }) {
   };
 
   useEffect(() => {
+    // Developer bypass for UI testing
+    if (typeof window !== 'undefined' && window.location.search.includes('bypass=true')) {
+      const dummyUser = { uid: 'demo_user', email: 'demo@fittrack.run', displayName: 'Demo User' };
+      setUser(dummyUser);
+      setUserProfile(dummyUser);
+      setLoading(false);
+      return;
+    }
+
     if (!auth) {
       setLoading(false);
       return;

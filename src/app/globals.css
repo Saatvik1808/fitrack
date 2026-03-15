@@ -1,29 +1,61 @@
 @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
 
 :root {
-  --bg: #0a0a0f;
-  --bg2: #111118;
-  --bg3: #1a1a24;
-  --bg4: #22222f;
-  --border: rgba(255,255,255,0.07);
-  --border2: rgba(255,255,255,0.12);
-  --text: #f0f0f5;
-  --text2: #9090a8;
-  --text3: #5a5a72;
-  --accent: #6c63ff;
-  --accent2: #8b85ff;
-  --green: #22c55e;
-  --green2: #16a34a;
-  --red: #ef4444;
-  --orange: #f97316;
-  --yellow: #eab308;
-  --blue: #3b82f6;
-  --pink: #ec4899;
-  --radius: 14px;
-  --radius-sm: 8px;
-  --shadow: 0 4px 24px rgba(0,0,0,0.4);
-  --transition: 0.18s ease;
+  /* Premium Deep Navy / Black Theme */
+  --bg: #05050A;          /* Deepest black/navy background */
+  --bg2: #0D0E15;         /* Slightly elevated cards */
+  --bg3: #13141F;         /* Modals, inputs */
+  --bg4: #1F2033;         /* Hover states, progress tracks */
+  
+  --border: rgba(255,255,255,0.04);
+  --border2: rgba(255,255,255,0.08);
+  --glass-border: rgba(255,255,255,0.05);
+
+  --text: #F8F9FA;
+  --text2: #9CA3AF;
+  --text3: #6B7280;
+  
+  /* Vibrant Accents */
+  --accent: #818CF8;      /* Primary Purple */
+  --accent2: #A78BFA;
+  --green: #34D399;       /* Progress / Success */
+  --green2: #10B981;
+  --blue: #38BDF8;        /* Hydration */
+  --blue2: #0EA5E9;
+  --orange: #FB923C;      /* Calories */
+  --orange2: #EA580C;
+  --red: #F87171;
+  --pink: #F472B6;
+  --yellow: #FBBF24;
+
+  /* Glow Effects */
+  --glow-accent: 0 0 20px rgba(129, 140, 248, 0.25);
+  --glow-green: 0 0 20px rgba(52, 211, 153, 0.2);
+  --glow-blue: 0 0 20px rgba(56, 189, 248, 0.2);
+  --glow-orange: 0 0 20px rgba(251, 146, 60, 0.2);
+
+  --radius: 20px;
+  --radius-sm: 12px;
+  --shadow: 0 8px 32px rgba(0,0,0,0.4);
+  --transition: 0.25s cubic-bezier(0.4, 0, 0.2, 1);
 }
+
+/* Premium Component Classes */
+.glass-card {
+  background: linear-gradient(145deg, rgba(20, 21, 31, 0.6) 0%, rgba(13, 14, 21, 0.4) 100%);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius);
+  box-shadow: 0 4px 24px rgba(0,0,0,0.2);
+}
+.glass-card-hover {
+  transition: transform var(--transition), box-shadow var(--transition), border-color var(--transition);
+}
+.glass-card-hover:active {
+  transform: scale(0.98);
+}
+
 
 /* Light theme overrides */
 .theme-light {
