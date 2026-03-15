@@ -33,14 +33,10 @@ async function fetchApiData(collectionName) {
 }
 
 const dbTimeouts = {}
-function saveToApi(collectionName, value) {
+export async function saveToApi(collectionName, value, immediate = false) {
   if (!auth.currentUser || !collectionName) return
 
-  if (dbTimeouts[collectionName]) {
-    clearTimeout(dbTimeouts[collectionName])
-  }
-  
-  dbTimeouts[collectionName] = setTimeout(async () => {
+  const executeSave = async () => {
     try {
       const token = await auth.currentUser.getIdToken();
       await fetch('/api/data', {
@@ -54,7 +50,18 @@ function saveToApi(collectionName, value) {
     } catch (err) {
       console.error("API sync error:", err)
     }
-  }, 1000)
+  };
+
+  if (immediate) {
+    if (dbTimeouts[collectionName]) clearTimeout(dbTimeouts[collectionName]);
+    return await executeSave();
+  }
+
+  if (dbTimeouts[collectionName]) {
+    clearTimeout(dbTimeouts[collectionName])
+  }
+  
+  dbTimeouts[collectionName] = setTimeout(executeSave, 1000)
 }
 
 export function useProfile(userId, userEmail) {
@@ -76,12 +83,22 @@ export function useProfile(userId, userEmail) {
     })
   }, [userId])
 
-  const setProfile = useCallback((updater) => {
+  const setProfile = useCallback(async (updater, options = { immediate: false }) => {
+    let nextValue;
     setProfileState(prev => {
       const next = typeof updater === 'function' ? updater(prev) : { ...prev, ...updater }
-      if (isMounted) saveToApi('PROFILE', next)
+      nextValue = next;
       return next
     })
+    
+    if (isMounted && nextValue) {
+      if (options.immediate) {
+        await saveToApi('PROFILE', nextValue, true);
+      } else {
+        saveToApi('PROFILE', nextValue);
+      }
+    }
+    return nextValue;
   }, [userId, isMounted])
 
   return [profile, setProfile]

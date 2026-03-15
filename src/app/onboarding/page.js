@@ -59,7 +59,7 @@ export default function Onboarding() {
     return { calories: dailyCalories, protein: dailyProtein }
   }
 
-  const handleSave = () => {
+  const handleSave = async () => {
     if (!form.name || !form.currentWeight || !form.goalWeight || !form.height) {
       alert("Please fill all required fields")
       return
@@ -67,7 +67,7 @@ export default function Onboarding() {
 
     const { calories, protein } = calculateTargets()
 
-    setProfile({
+    await setProfile({
       name: form.name,
       currentWeight: Number(form.currentWeight),
       startWeight: Number(form.currentWeight),
@@ -77,7 +77,7 @@ export default function Onboarding() {
       dailyCalorieTarget: calories,
       dailyProteinTarget: protein,
       geminiApiKey: ''
-    })
+    }, { immediate: true })
 
     router.push('/dashboard')
   }
