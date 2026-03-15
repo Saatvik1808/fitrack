@@ -12,13 +12,24 @@ export function AuthProvider({ children }) {
   const [loading, setLoading] = useState(true);
 
   // Load user profile from Firestore
-  const loadUserProfile = async (uid) => {
+  const loadUserProfile = async (currentUser) => {
     try {
-      const docRef = doc(db, 'users', uid);
+      const docRef = doc(db, 'users', currentUser.uid);
       const docSnap = await getDoc(docRef);
       if (docSnap.exists()) {
         setUserProfile(docSnap.data());
         return docSnap.data();
+      } else {
+        // Create basic user doc so the user is visible in the Firebase console
+        const basicInfo = { 
+          email: currentUser.email, 
+          displayName: currentUser.displayName, 
+          photoURL: currentUser.photoURL, 
+          createdAt: new Date().toISOString() 
+        };
+        await setDoc(docRef, basicInfo, { merge: true });
+        setUserProfile(basicInfo);
+        return basicInfo;
       }
     } catch (error) {
       console.error("Error loading user profile:", error);
@@ -35,7 +46,7 @@ export function AuthProvider({ children }) {
     const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
       setUser(currentUser);
       if (currentUser) {
-        await loadUserProfile(currentUser.uid);
+        await loadUserProfile(currentUser);
       } else {
         setUserProfile(null);
       }

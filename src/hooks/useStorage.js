@@ -120,7 +120,6 @@ async function fetchFromDb(userId, collectionName, key, setState) {
 
 // Migrate original unscoped data to user-scoped keys (runs once per key)
 function migrateIfNeeded(userId, userEmail) {
-  if (!SAATVIK_EMAILS.includes(userEmail)) return
   const keys = userKeys(userId)
   Object.entries(BASE_KEYS).forEach(([name, oldKey]) => {
     const newKey = keys[name]
