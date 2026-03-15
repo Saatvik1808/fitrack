@@ -15,7 +15,7 @@ if (!apps.length) {
         credential: cert(serviceAccount),
       });
     } else {
-      adminApp = initializeApp(); 
+      adminApp = initializeApp({ projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID || 'fitapp-6c14c' }); 
     }
   } catch (error) {
     console.error('Firebase Admin Initialization Error:', error);
