@@ -153,11 +153,11 @@ export function StatCard({ label, value, unit, sub, color = 'var(--accent)', ico
 
 export function Btn({ children, onClick, variant = 'primary', size = 'md', disabled, type = 'button', style = {} }) {
   const styles = {
-    primary: { background: 'var(--accent)', color: '#fff', border: 'none' },
+    primary: { background: 'linear-gradient(135deg, #7C5CFF 0%, #4F8CFF 100%)', color: '#fff', border: 'none', boxShadow: '0 4px 15px rgba(124, 92, 255, 0.3)' },
     secondary: { background: 'var(--bg3)', color: 'var(--text)', border: '1px solid var(--border)' },
     ghost: { background: 'transparent', color: 'var(--text2)', border: '1px solid var(--border)' },
     danger: { background: 'var(--red)', color: '#fff', border: 'none' },
-    success: { background: 'var(--green)', color: '#fff', border: 'none' },
+    success: { background: '#10B981', color: '#fff', border: 'none', boxShadow: '0 4px 15px rgba(16, 185, 129, 0.3)' },
   }
   const sizes = {
     sm: { padding: '6px 12px', fontSize: 12 },
@@ -332,10 +332,11 @@ export function Tabs({ tabs, active, onChange }) {
     <div style={{
       display: 'flex',
       background: 'var(--bg3)',
-      borderRadius: 10,
-      padding: 3,
-      gap: 2,
-      overflowX: 'auto',
+      borderRadius: 100,
+      padding: 4,
+      gap: 4,
+      position: 'relative',
+      border: '1px solid var(--border)',
     }}>
       {tabs.map(tab => (
         <button
@@ -343,20 +344,34 @@ export function Tabs({ tabs, active, onChange }) {
           onClick={() => onChange(tab.id)}
           style={{
             flex: 1,
-            padding: '7px 12px',
-            borderRadius: 8,
+            padding: '8px 16px',
+            borderRadius: 100,
             fontSize: 13,
-            fontWeight: 500,
+            fontWeight: 600,
             fontFamily: 'inherit',
             cursor: 'pointer',
             border: 'none',
             transition: 'all 0.2s ease',
             whiteSpace: 'nowrap',
-            background: active === tab.id ? 'var(--bg)' : 'transparent',
-            color: active === tab.id ? 'var(--text)' : 'var(--text3)',
-            boxShadow: active === tab.id ? '0 1px 4px rgba(0,0,0,0.3)' : 'none',
+            position: 'relative',
+            background: 'transparent',
+            color: active === tab.id ? '#fff' : 'var(--text3)',
+            zIndex: 1,
           }}
         >
+          {active === tab.id && (
+            <motion.div
+              layoutId="activeTabPill"
+              style={{
+                position: 'absolute',
+                inset: 0,
+                background: 'linear-gradient(135deg, #7C5CFF 0%, #4F8CFF 100%)',
+                borderRadius: 100,
+                zIndex: -1,
+                boxShadow: '0 2px 8px rgba(124, 92, 255, 0.25)',
+              }}
+            />
+          )}
           {tab.label}
         </button>
       ))}
@@ -369,35 +384,50 @@ export function Divider({ margin = '1rem 0' }) {
 }
 
 export function MacroBar({ calories, calTarget, protein, proteinTarget, carbs, fat }) {
-  const items = [
-    { label: 'Protein', value: protein, target: proteinTarget, color: 'var(--blue)' },
-    { label: 'Carbs', value: carbs, target: 146, color: 'var(--orange)' },
-    { label: 'Fat', value: fat, target: 47, color: 'var(--pink)' },
-  ]
+  const fatTarget = 50; // Placeholder targets
+  const carbsTarget = 200;
+  const rem = calTarget - calories;
+
   return (
-    <div>
-      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 12 }}>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end' }}>
         <div>
-          <div style={{ fontSize: 11, color: 'var(--text2)', marginBottom: 2 }}>CALORIES</div>
-          <div style={{ fontSize: 22, fontWeight: 700 }}>{calories || 0} <span style={{ fontSize: 12, color: 'var(--text2)' }}>/ {calTarget} kcal</span></div>
+          <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--text3)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 4 }}>CALORIES</div>
+          <div style={{ fontSize: 28, fontWeight: 800, color: 'var(--text)', lineHeight: 1 }}>
+            {calories} <span style={{ fontSize: 14, color: 'var(--text3)', fontWeight: 500 }}>/ {calTarget} kcal</span>
+          </div>
         </div>
         <div style={{ textAlign: 'right' }}>
-          <div style={{ fontSize: 11, color: 'var(--text2)', marginBottom: 2 }}>REMAINING</div>
-          <div style={{ fontSize: 22, fontWeight: 700, color: (calTarget - (calories || 0)) < 0 ? 'var(--red)' : 'var(--green)' }}>
-            {calTarget - (calories || 0)} kcal
+          <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--text3)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 4 }}>REMAINING</div>
+          <div style={{ fontSize: 20, fontWeight: 800, color: rem < 0 ? 'var(--red)' : '#10B981' }}>
+            {rem} <span style={{ fontSize: 12 }}>kcal</span>
           </div>
         </div>
       </div>
-      <ProgressBar value={calories || 0} max={calTarget} color={calories > calTarget ? 'var(--red)' : 'var(--green)'} />
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 10, marginTop: 12 }}>
-        {items.map(item => (
-          <div key={item.label} style={{ textAlign: 'center' }}>
-            <div style={{ fontSize: 11, color: 'var(--text3)', marginBottom: 4 }}>{item.label}</div>
-            <div style={{ fontSize: 15, fontWeight: 700, color: item.color }}>{item.value || 0}g</div>
-            <div style={{ fontSize: 10, color: 'var(--text3)' }}>/ {item.target}g</div>
-            <div style={{ height: 3, background: 'var(--bg4)', borderRadius: 100, marginTop: 4, overflow: 'hidden' }}>
-              <div style={{ height: '100%', width: Math.min(100, ((item.value || 0) / item.target) * 100) + '%', background: item.color, borderRadius: 100 }} />
+
+      <div style={{ height: 10, background: 'var(--bg4)', borderRadius: 100, overflow: 'hidden' }}>
+        <div style={{
+          height: '100%',
+          width: Math.min(100, (calories / calTarget) * 100) + '%',
+          background: calories > calTarget ? 'var(--red)' : 'linear-gradient(90deg, #10B981, #34D399)',
+          borderRadius: 100,
+          transition: 'width 1s cubic-bezier(0.34, 1.56, 0.64, 1)',
+        }} />
+      </div>
+
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 12 }}>
+        {[
+          { label: 'Protein', val: protein, target: proteinTarget, color: '#4DA3FF' },
+          { label: 'Carbs', val: carbs, target: carbsTarget, color: '#FF8A3D' },
+          { label: 'Fat', val: fat, target: fatTarget, color: '#EC4899' },
+        ].map(m => (
+          <div key={m.label} style={{ background: 'var(--bg3)', padding: '10px 8px', borderRadius: 12, border: '1px solid var(--border)' }}>
+            <div style={{ fontSize: 10, fontWeight: 700, color: 'var(--text3)', textTransform: 'uppercase', marginBottom: 4 }}>{m.label}</div>
+            <div style={{ fontSize: 15, fontWeight: 800, color: 'var(--text)' }}>{m.val}g</div>
+            <div style={{ height: 4, background: 'var(--bg4)', borderRadius: 100, marginTop: 6, overflow: 'hidden' }}>
+              <div style={{ height: '100%', width: Math.min(100, (m.val / m.target) * 100) + '%', background: m.color, borderRadius: 100 }} />
             </div>
+            <div style={{ fontSize: 9, color: 'var(--text3)', marginTop: 4 }}>Goal: {m.target}g</div>
           </div>
         ))}
       </div>
