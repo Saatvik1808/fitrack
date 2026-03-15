@@ -53,7 +53,7 @@ export default function Nav({ active, onChange, onLogout }) {
               borderRadius: 10,
               marginBottom: 2,
               background: active === id ? 'var(--accent)18' : 'transparent',
-              color: active === id ? 'var(--accent2)' : 'var(--text2)',
+              color: active === id ? '#7C5CFF' : 'var(--text2)',
               fontSize: 13,
               fontWeight: active === id ? 600 : 400,
               fontFamily: 'inherit',
@@ -129,7 +129,7 @@ export default function Nav({ active, onChange, onLogout }) {
             onClick={() => { onChange(id); setShowMore(false) }}
             style={{
               display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3,
-              color: active === id && !showMore ? 'var(--accent2)' : 'var(--text3)',
+            color: active === id && !showMore ? '#7C5CFF' : '#9CA3AF',
               fontFamily: 'inherit', cursor: 'pointer', border: 'none', background: 'transparent',
               padding: '2px 6px', flex: 1,
             }}
@@ -142,7 +142,7 @@ export default function Nav({ active, onChange, onLogout }) {
           onClick={() => setShowMore(!showMore)}
           style={{
             display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3,
-            color: showMore ? 'var(--accent2)' : 'var(--text3)',
+            color: showMore ? '#7C5CFF' : '#9CA3AF',
             fontFamily: 'inherit', cursor: 'pointer', border: 'none', background: 'transparent',
             padding: '2px 6px', flex: 1,
           }}

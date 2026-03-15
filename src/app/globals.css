@@ -57,30 +57,39 @@
 }
 
 
-/* Light theme overrides - Refined for premium feel */
+/* Light theme overrides - Apple Health Style */
 .theme-light {
-  --bg: #F8FAFC;          /* Cooler, cleaner white */
-  --bg2: #FFFFFF;
-  --bg3: #F1F5F9;         /* Softer elevation */
+  --bg: #F6F7FB;          /* Neutral gray background */
+  --bg2: #FFFFFF;         /* Pure white cards */
+  --bg3: #F1F5F9;
   --bg4: #E2E8F0;
   
-  --border: rgba(0,0,0,0.06);
-  --border2: rgba(0,0,0,0.12);
-  --glass-border: rgba(0,0,0,0.04);
+  --border: rgba(0,0,0,0.05);
+  --border2: rgba(0,0,0,0.08);
+  --glass-border: rgba(0,0,0,0.03);
 
-  --text: #0F172A;        /* Slate 900 */
-  --text2: #475569;       /* Slate 600 - labels */
-  --text3: #94A3B8;       /* Slate 400 - secondary labels */
+  --text: #0F172A;        /* Slate 900 - Primary */
+  --text2: #6B7280;       /* Gray 600 - Secondary */
+  --text3: #9CA3AF;       /* Gray 400 - Tertiary */
   
   --accent: #6366F1;      /* Indigo 500 */
-  --accent2: #818CF8;
-  --shadow: 0 10px 40px rgba(0,0,0,0.06);
+  --accent2: #4F46E5;
+  --shadow: 0px 8px 20px rgba(0,0,0,0.06);
+  --glass-bg: rgba(255, 255, 255, 0.8);
 
-  /* Light Theme Glows */
-  --glow-accent: 0 0 20px rgba(99, 102, 241, 0.15);
-  --glow-green: 0 0 20px rgba(16, 185, 129, 0.15);
-  --glow-blue: 0 0 20px rgba(14, 165, 233, 0.15);
-  --glow-orange: 0 0 20px rgba(245, 158, 11, 0.15);
+  /* Light Theme Glows - Softer */
+  --glow-accent: 0 0 20px rgba(99, 102, 241, 0.1);
+  --glow-green: 0 0 20px rgba(16, 185, 129, 0.1);
+  --glow-blue: 0 0 20px rgba(14, 165, 233, 0.1);
+  --glow-orange: 0 0 20px rgba(245, 158, 11, 0.1);
+}
+
+.theme-light .glass-card {
+  background: var(--bg2);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  box-shadow: var(--shadow);
+  border: 1px solid var(--border);
 }
 
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }

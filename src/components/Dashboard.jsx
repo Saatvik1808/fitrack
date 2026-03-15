@@ -618,9 +618,14 @@ export default function Dashboard({ logs, setLog, workouts, runs, profile }) {
         
         <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginTop: 2 }}>
           {streak > 0 && (
-            <div style={{ display: 'flex', alignItems: 'center', gap: 6, background: 'var(--bg3)', padding: '5px 10px', borderRadius: 100, border: '1px solid var(--border)' }}>
+            <div style={{ 
+              display: 'flex', alignItems: 'center', gap: 6, 
+              background: 'var(--streak-bg, #FFF4E6)', 
+              padding: '6px 12px', borderRadius: 100, 
+              border: '1px solid var(--streak-border, #FFE8CC)' 
+            }}>
               <span style={{ fontSize: 13 }}>🔥</span>
-              <span style={{ fontSize: 12, fontWeight: 700, color: 'var(--text)' }}>{streak} day streak</span>
+              <span style={{ fontSize: 12, fontWeight: 700, color: 'var(--streak-text, #F97316)' }}>{streak} day streak</span>
             </div>
           )}
           {safeWeight && safeGoal && safeWeight !== safeGoal && (
@@ -638,8 +643,8 @@ export default function Dashboard({ logs, setLog, workouts, runs, profile }) {
           <svg style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', transform: 'rotate(-90deg)' }}>
             <defs>
               <linearGradient id="ringGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-                <stop offset="0%" stopColor="#A78BFA" />   {/* gradient purple */}
-                <stop offset="100%" stopColor="#38BDF8" /> {/* gradient blue */}
+                <stop offset="0%" stopColor="#7C5CFF" />   {/* gradient purple */}
+                <stop offset="100%" stopColor="#4F8CFF" /> {/* gradient blue */}
               </linearGradient>
               <filter id="glow">
                 <feGaussianBlur stdDeviation="6" result="coloredBlur"/>
@@ -649,7 +654,7 @@ export default function Dashboard({ logs, setLog, workouts, runs, profile }) {
                 </feMerge>
               </filter>
             </defs>
-            <circle cx="110" cy="110" r="96" fill="none" stroke="var(--bg4)" strokeWidth="18" />
+            <circle cx="110" cy="110" r="96" fill="none" stroke="var(--bg4)" strokeWidth="18" opacity={0.3} />
             <circle cx="110" cy="110" r="96" fill="none" stroke="url(#ringGrad)" strokeWidth="18" strokeDasharray={`${2 * Math.PI * 96}`} strokeDashoffset={mounted ? `${2 * Math.PI * 96 * (1 - (goalPct / 100))}` : `${2 * Math.PI * 96}`} strokeLinecap="round" style={{ transition: 'stroke-dashoffset 1.5s cubic-bezier(0.34, 1.56, 0.64, 1)', filter: 'url(#glow)' }} />
           </svg>
           
@@ -683,10 +688,10 @@ export default function Dashboard({ logs, setLog, workouts, runs, profile }) {
         <MotionCard delay={0.2} onClick={() => setSelectedAnalysis('macros')} className="glass-card clickable-card" style={{ height: '100%', display: 'flex', flexDirection: 'column', justifyContent: 'center', padding: '20px 16px' }}>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 16, textAlign: 'center' }}>
             {[
-              { label: 'Calories', value: todayLog.calories || 0, unit: 'kcal', color: 'var(--orange)', target: profile.dailyCalorieTarget },
-              { label: 'Protein', value: todayLog.protein || 0, unit: 'g', color: 'var(--blue)', target: profile.dailyProteinTarget },
-              { label: 'Carbs', value: todayLog.carbs || 0, unit: 'g', color: 'var(--green)', target: 200 }, // Carbs target placeholder
-              { label: 'Sleep', value: todayLog.sleep || 0, unit: 'hr', color: 'var(--pink)', target: 8 },
+              { label: 'Calories', value: todayLog.calories || 0, unit: 'kcal', color: '#FF8A3D', target: profile.dailyCalorieTarget },
+              { label: 'Protein', value: todayLog.protein || 0, unit: 'g', color: '#4DA3FF', target: profile.dailyProteinTarget },
+              { label: 'Carbs', value: todayLog.carbs || 0, unit: 'g', color: '#F59E0B', target: 200 }, // Carbs target placeholder
+              { label: 'Sleep', value: todayLog.sleep || 0, unit: 'hr', color: '#EC4899', target: 8 },
             ].map(item => (
               <div key={item.label}>
                 <div style={{ fontSize: 11, color: 'var(--text3)', marginBottom: 2 }}>{item.label}</div>
@@ -725,15 +730,15 @@ export default function Dashboard({ logs, setLog, workouts, runs, profile }) {
 
             <div style={{ 
               width: 50, height: 76, borderRadius: '8px 8px 16px 16px', 
-              border: '2px solid rgba(56, 189, 248, 0.3)', 
+              border: '2px solid rgba(79, 140, 255, 0.2)', 
               position: 'relative', overflow: 'hidden',
-              background: 'rgba(56, 189, 248, 0.05)',
-              boxShadow: 'inset 0 0 10px rgba(0,0,0,0.5)',
+              background: '#FFFFFF',
+              boxShadow: 'inset 0 0 10px rgba(0,0,0,0.05)',
             }}>
               <div style={{
                 position: 'absolute', bottom: 0, left: 0, right: 0, top: mounted ? `${100 - waterPct}%` : '100%',
-                background: 'linear-gradient(180deg, rgba(14, 165, 233, 0.8) 0%, rgba(56, 189, 248, 0.9) 100%)',
-                boxShadow: '0 -4px 12px rgba(56, 189, 248, 0.4)',
+                background: 'linear-gradient(180deg, #4FC3F7 0%, #0288D1 100%)',
+                boxShadow: '0 -4px 12px rgba(56, 189, 248, 0.2)',
                 transition: 'top 1.5s cubic-bezier(0.34, 1.56, 0.64, 1)'
               }}>
                 <div style={{ position: 'absolute', top: -4, left: 0, right: 0, height: 4, background: 'rgba(255,255,255,0.3)', borderRadius: '50%' }} />

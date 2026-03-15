@@ -136,12 +136,12 @@ export function StatCard({ label, value, unit, sub, color = 'var(--accent)', ico
         </div>
         {Icon && (
           <div style={{
-            background: `linear-gradient(135deg, ${color}22 0%, ${color}00 100%)`,
-            border: `1px solid ${color}44`,
+            background: 'var(--bg3)',
+            border: '1px solid var(--border2)',
             borderRadius: 12,
             padding: 8,
             color,
-            boxShadow: `inset 0 0 12px ${color}11`
+            boxShadow: 'var(--glow-accent)'
           }}>
             <Icon size={18} strokeWidth={2.5} />
           </div>
@@ -192,7 +192,7 @@ export function Btn({ children, onClick, variant = 'primary', size = 'md', disab
 export function SectionTitle({ children, action }) {
   return (
     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.75rem' }}>
-      <h2 style={{ fontSize: 14, fontWeight: 700, color: 'var(--text)', letterSpacing: '0.01em', textTransform: 'uppercase', opacity: 0.9 }}>{children}</h2>
+      <h2 style={{ fontSize: 13, fontWeight: 700, color: 'var(--text)', letterSpacing: '0.03em', textTransform: 'uppercase', opacity: 0.8 }}>{children}</h2>
       {action}
     </div>
   )
@@ -269,7 +269,6 @@ export function ProgressBar({ value, max = 100, color = 'var(--accent)', label, 
           background: color,
           borderRadius: 100,
           transition: 'width 0.8s cubic-bezier(0.34, 1.56, 0.64, 1)',
-          boxShadow: `0 0 10px ${color}33`
         }} />
       </div>
     </div>
