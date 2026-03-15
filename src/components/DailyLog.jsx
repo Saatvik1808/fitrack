@@ -336,9 +336,13 @@ export default function DailyLog({ logs, setLog, today, profile }) {
         </AnimatePresence>
 
         <div style={{ 
-          position: 'fixed', bottom: 85, left: 16, right: 16, 
-          zIndex: 100, display: 'flex', gap: 12 
+          position: 'fixed', bottom: 85, left: 0, right: 0, 
+          zIndex: 100, display: 'flex', gap: 12,
+          padding: '16px',
+          background: 'linear-gradient(to top, var(--bg) 60%, transparent)',
+          pointerEvents: 'none'
         }}>
+          <div style={{ flex: 1, pointerEvents: 'auto' }}>
           <Btn 
             onClick={handleSave} 
             variant={saved ? 'success' : 'primary'} 
@@ -350,6 +354,7 @@ export default function DailyLog({ logs, setLog, today, profile }) {
           >
             {saved ? <span style={{ display: 'flex', alignItems: 'center', gap: 8 }}>Saved ✓</span> : <><Save size={20} /> Save Daily Log</>}
           </Btn>
+          </div>
         </div>
       </div>
       <style>{`
