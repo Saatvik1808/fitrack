@@ -103,7 +103,7 @@ export default function DashboardPage() {
   }, [user, loading, profile, loadingProfile, router])
 
   // Show loading while checking auth or waiting for sync
-  if (loading || loadingProfile || !user || !profile?.currentWeight) {
+  if (loading || loadingProfile || !user || (!profile?.currentWeight && !window?.location?.search?.includes('bypass=true'))) {
     return (
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '100vh' }}>
         <div style={{
@@ -117,13 +117,22 @@ export default function DashboardPage() {
     )
   }
 
+  // Developer bypass injects a dummy profile so the UI can mount without Firebase connectivity
+  const effectiveProfile = profile?.currentWeight ? profile : {
+    name: 'Demo User',
+    currentWeight: 75,
+    goalWeight: 70,
+    dailyCalorieTarget: 2000,
+    dailyProteinTarget: 150,
+  };
+
   const pages = {
-    dashboard: <Dashboard logs={logs} workouts={workouts} runs={runs} profile={profile} />,
-    log: <DailyLog logs={logs} setLog={setLog} today={today} profile={profile} />,
+    dashboard: <Dashboard logs={logs} setLog={setLog} workouts={workouts} runs={runs} profile={effectiveProfile} />,
+    log: <DailyLog logs={logs} setLog={setLog} today={today} profile={effectiveProfile} />,
     recovery: <RecoveryTracker logs={logs} setLog={setLog} today={today} />,
     workout: <WorkoutLogger workouts={workouts} addWorkout={addWorkout} deleteWorkout={deleteWorkout} />,
-    running: <RunningTracker runs={runs} addRun={addRun} deleteRun={deleteRun} profile={profile} />,
-    ai: <AIFoodAnalyzer onAddToLog={handleAddFoodToLog} apiKey={profile.geminiApiKey} />,
+    running: <RunningTracker runs={runs} addRun={addRun} deleteRun={deleteRun} profile={effectiveProfile} />,
+    ai: <AIFoodAnalyzer onAddToLog={handleAddFoodToLog} apiKey={effectiveProfile.geminiApiKey} />,
     history: <History logs={logs} workouts={workouts} runs={runs} />,
     settings: <Settings profile={profile} setProfile={setProfile} theme={theme} setTheme={setTheme} user={user} onLogout={handleLogout} />,
     download: <AppDownload />,

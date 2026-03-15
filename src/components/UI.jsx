@@ -91,13 +91,11 @@ export function Card({ children, className = '', style = {}, onClick }) {
     <div
       onClick={onClick}
       style={{
-        background: 'var(--bg2)',
-        border: '1px solid var(--border)',
-        borderRadius: 'var(--radius)',
         padding: '1.25rem',
+        cursor: onClick ? 'pointer' : 'default',
         ...style,
       }}
-      className={className}
+      className={`glass-card ${onClick ? 'glass-card-hover' : ''} ${className}`}
     >
       {children}
     </div>
@@ -107,20 +105,17 @@ export function Card({ children, className = '', style = {}, onClick }) {
 export function MotionCard({ children, className = '', style = {}, onClick, delay = 0 }) {
   return (
     <motion.div
-      initial={{ opacity: 0, y: 10 }}
+      initial={{ opacity: 0, y: 15 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.3, delay, ease: 'easeOut' }}
-      whileHover={onClick ? { scale: 0.99 } : {}}
+      transition={{ duration: 0.4, delay, ease: [0.25, 1, 0.5, 1] }}
+      whileHover={onClick ? { scale: 0.98, y: -2 } : {}}
       onClick={onClick}
       style={{
-        background: 'var(--bg2)',
-        border: '1px solid var(--border)',
-        borderRadius: 'var(--radius)',
-        padding: '1.25rem',
+        padding: '1.5rem',
         cursor: onClick ? 'pointer' : 'default',
         ...style,
       }}
-      className={className}
+      className={`glass-card ${onClick ? 'glass-card-hover' : ''} ${className}`}
     >
       {children}
     </motion.div>
@@ -129,24 +124,26 @@ export function MotionCard({ children, className = '', style = {}, onClick, dela
 
 export function StatCard({ label, value, unit, sub, color = 'var(--accent)', icon: Icon, onClick, delay = 0 }) {
   return (
-    <MotionCard onClick={onClick} delay={delay}>
+    <MotionCard onClick={onClick} delay={delay} style={{ padding: '1.25rem' }}>
       <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between' }}>
         <div>
-          <div style={{ fontSize: 11, color: 'var(--text2)', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 6 }}>{label}</div>
-          <div style={{ fontSize: 28, fontWeight: 700, color, lineHeight: 1, marginBottom: 2 }}>
+          <div style={{ fontSize: 11, color: 'var(--text2)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 8, fontWeight: 600 }}>{label}</div>
+          <div style={{ fontSize: 26, fontWeight: 700, color: 'var(--text)', lineHeight: 1, marginBottom: 4 }}>
             {value ?? '—'}
-            {unit && <span style={{ fontSize: 14, fontWeight: 400, color: 'var(--text2)', marginLeft: 4 }}>{unit}</span>}
+            {unit && <span style={{ fontSize: 13, fontWeight: 500, color: 'var(--text3)', marginLeft: 4 }}>{unit}</span>}
           </div>
-          {sub && <div style={{ fontSize: 12, color: 'var(--text3)', marginTop: 4 }}>{sub}</div>}
+          {sub && <div style={{ fontSize: 11, color: color, fontWeight: 500 }}>{sub}</div>}
         </div>
         {Icon && (
           <div style={{
-            background: color + '18',
-            borderRadius: 10,
+            background: `linear-gradient(135deg, ${color}22 0%, ${color}00 100%)`,
+            border: `1px solid ${color}44`,
+            borderRadius: 12,
             padding: 8,
             color,
+            boxShadow: `inset 0 0 12px ${color}11`
           }}>
-            <Icon size={18} />
+            <Icon size={18} strokeWidth={2.5} />
           </div>
         )}
       </div>

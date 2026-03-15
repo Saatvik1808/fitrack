@@ -23,30 +23,37 @@ const chartDefaults = {
   plugins: {
     legend: { display: false },
     tooltip: {
-      backgroundColor: '#1a1a24',
-      borderColor: 'rgba(255,255,255,0.1)',
+      backgroundColor: 'rgba(13, 14, 21, 0.9)',
+      borderColor: 'rgba(255,255,255,0.05)',
       borderWidth: 1,
-      titleColor: '#9090a8',
-      bodyColor: '#f0f0f5',
-      padding: 10,
-      cornerRadius: 8,
+      titleColor: '#9CA3AF',
+      bodyColor: '#F8F9FA',
+      padding: 12,
+      cornerRadius: 12,
+      displayColors: false,
+      titleFont: { family: 'Space Grotesk', size: 12 },
+      bodyFont: { family: 'Space Grotesk', size: 14, weight: 'bold' }
     },
   },
   scales: {
     x: {
       grid: { display: false },
       border: { display: false },
-      ticks: { color: '#5a5a72', font: { size: 10, family: 'Space Grotesk' } },
+      ticks: { color: '#6B7280', font: { size: 10, family: 'Space Grotesk' }, maxRotation: 0 },
     },
     y: {
-      grid: { color: 'rgba(255,255,255,0.04)', drawBorder: false },
+      display: false, // Clean premium look, hide Y axis entirely
+      grid: { display: false },
       border: { display: false },
-      ticks: { color: '#5a5a72', font: { size: 10, family: 'Space Grotesk' } },
     },
+  },
+  interaction: {
+    intersect: false,
+    mode: 'index',
   },
 }
 
-export default function Dashboard({ logs, workouts, runs, profile }) {
+export default function Dashboard({ logs, setLog, workouts, runs, profile }) {
   const [selectedAnalysis, setSelectedAnalysis] = useState(null)
   
   const today = formatLocalYYYYMMDD()
@@ -64,7 +71,7 @@ export default function Dashboard({ logs, workouts, runs, profile }) {
   const goalPct = safeGoal ? calcGoalProgress(safeWeight, safeStart, safeGoal) : 0
   const streak = getStreakDays(logs)
 
-  // Hydration parsing
+  // Hydration parsing & actions
   const parseWaterAmount = (val) => {
     if (!val) return 0;
     const n = Number(val);
@@ -74,6 +81,11 @@ export default function Dashboard({ logs, workouts, runs, profile }) {
   const waterIntake = parseWaterAmount(todayLog.water);
   const waterGoal = parseWaterAmount(todayLog.waterGoal) || 3000;
   const waterPct = Math.min((waterIntake / waterGoal) * 100, 100) || 0;
+
+  const handleAddWater = (amount) => {
+    if (!setLog) return;
+    setLog(today, { water: waterIntake + amount, waterGoal: waterGoal });
+  };
 
   // Weight trend data
   const weightData = useMemo(() => {
@@ -88,11 +100,19 @@ export default function Dashboard({ logs, workouts, runs, profile }) {
       labels: last30.map(d => formatDate(d)),
       datasets: [{
         data: filled,
-        borderColor: '#6c63ff',
-        backgroundColor: 'rgba(108,99,255,0.1)',
-        borderWidth: 2,
-        pointRadius: 2,
-        pointHoverRadius: 5,
+        borderColor: '#818CF8',
+        backgroundColor: (context) => {
+          const ctx = context.chart.ctx;
+          const gradient = ctx.createLinearGradient(0, 0, 0, 200);
+          gradient.addColorStop(0, 'rgba(129, 140, 248, 0.4)');
+          gradient.addColorStop(1, 'rgba(129, 140, 248, 0.0)');
+          return gradient;
+        },
+        borderWidth: 3,
+        pointRadius: 0,
+        pointHoverRadius: 6,
+        pointHoverBackgroundColor: '#818CF8',
+        pointHoverBorderColor: '#fff',
         fill: true,
         tension: 0.4,
         spanGaps: true,
@@ -580,70 +600,55 @@ export default function Dashboard({ logs, workouts, runs, profile }) {
   return (
     <div className="fade-in">
       {/* Hero stats */}
-      <div style={{ marginBottom: '1.5rem' }}>
-        <div style={{ fontSize: 11, color: 'var(--text3)', marginBottom: 4 }}>
-          {new Date().toLocaleDateString('en-IN', { weekday: 'long', day: 'numeric', month: 'long' })}
+      <div style={{ marginBottom: '2rem', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end' }}>
+        <div>
+          <div style={{ fontSize: 13, color: 'var(--text3)', marginBottom: 6, fontWeight: 500, letterSpacing: '0.05em', textTransform: 'uppercase' }}>
+            {new Date().toLocaleDateString('en-US', { weekday: 'short', day: 'numeric', month: 'short' })}
+          </div>
+          <h1 style={{ fontSize: 28, fontWeight: 800, letterSpacing: '-0.03em', background: 'linear-gradient(90deg, #fff, #9CA3AF)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
+            Good {new Date().getHours() < 12 ? 'morning' : new Date().getHours() < 17 ? 'afternoon' : 'evening'},
+            <br/>{profile.name}
+          </h1>
         </div>
-        <h1 style={{ fontSize: 22, fontWeight: 700, letterSpacing: '-0.02em' }}>
-          Good {new Date().getHours() < 12 ? 'morning' : new Date().getHours() < 17 ? 'afternoon' : 'evening'}, {profile.name}
-        </h1>
+        {streak > 0 && (
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6, background: 'var(--orange)18', padding: '8px 14px', borderRadius: 100, border: '1px solid var(--orange)44', boxShadow: 'var(--glow-orange)' }}>
+            <Flame size={16} color="var(--orange)" />
+            <span style={{ fontSize: 13, fontWeight: 700, color: 'var(--orange)' }}>{streak} Day Streak</span>
+          </div>
+        )}
       </div>
 
-      <Grid cols={2} gap={10}>
-        <StatCard
-          label="Current Weight"
-          value={safeWeight}
-          unit="kg"
-          color="var(--accent2)"
-          icon={Target}
-          sub={safeGoal ? `Goal: ${safeGoal} kg` : 'Set a goal'}
-          delay={0.0}
-          onClick={() => setSelectedAnalysis('weight')}
-        />
-        <StatCard
-          label="Goal Progress"
-          value={goalPct}
-          unit="%"
-          color="var(--green)"
-          icon={Trophy}
-          sub={`${safeWeight && safeGoal ? Math.abs(safeWeight - safeGoal).toFixed(1) : 0} kg to go`}
-          delay={0.05}
-          onClick={() => setSelectedAnalysis('goal')}
-        />
-        <StatCard
-          label="BMI"
-          value={bmi}
-          color={bmiCat.color}
-          icon={Activity}
-          sub={bmiCat.label}
-          delay={0.1}
-          onClick={() => setSelectedAnalysis('bmi')}
-        />
-        <StatCard
-          label="Log Streak"
-          value={streak}
-          unit="days"
-          color="var(--orange)"
-          icon={Zap}
-          sub="Keep it up!"
-          delay={0.15}
-          onClick={() => setSelectedAnalysis('streak')}
-        />
-      </Grid>
+      {/* Main Goal Circular Progress */}
+      <MotionCard delay={0.1} onClick={() => setSelectedAnalysis('goal')} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '2.5rem 1.5rem', marginBottom: '1.5rem' }}>
+        <div style={{ position: 'relative', width: 220, height: 220, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          {/* Background Track */}
+          <svg style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', transform: 'rotate(-90deg)' }}>
+            <circle cx="110" cy="110" r="96" fill="none" stroke="var(--bg4)" strokeWidth="16" />
+            <circle cx="110" cy="110" r="96" fill="none" stroke="var(--green)" strokeWidth="16" strokeDasharray={`${2 * Math.PI * 96}`} strokeDashoffset={`${2 * Math.PI * 96 * (1 - (goalPct / 100))}`} strokeLinecap="round" style={{ transition: 'stroke-dashoffset 1.5s cubic-bezier(0.16, 1, 0.3, 1)', filter: 'drop-shadow(0 0 12px rgba(52, 211, 153, 0.4))' }} />
+          </svg>
+          
+          <div style={{ textAlign: 'center', zIndex: 10 }}>
+            <div style={{ fontSize: 13, color: 'var(--text2)', fontWeight: 600, letterSpacing: '0.05em', marginBottom: 4 }}>CURRENT</div>
+            <div style={{ fontSize: 44, fontWeight: 800, color: 'var(--text)', lineHeight: 1 }}>{safeWeight}</div>
+            <div style={{ fontSize: 14, color: 'var(--text3)', fontWeight: 500, marginTop: 4 }}>kg</div>
+          </div>
+        </div>
 
-      {/* Goal progress bar */}
-      <Card style={{ marginTop: 14 }} onClick={() => setSelectedAnalysis('goal')} className="clickable-card">
-        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8 }}>
-          <span style={{ fontSize: 12, color: 'var(--text2)', fontWeight: 500 }}>Weight goal: {safeStart} → {safeGoal} kg</span>
-          <Badge color="var(--green)">{goalPct}% complete</Badge>
+        <div style={{ display: 'flex', justifyContent: 'space-between', width: '100%', marginTop: 32, padding: '0 1rem' }}>
+          <div style={{ textAlign: 'center' }}>
+            <div style={{ fontSize: 11, color: 'var(--text3)', fontWeight: 600, marginBottom: 4, letterSpacing: '0.05em' }}>START</div>
+            <div style={{ fontSize: 18, fontWeight: 700, color: 'var(--text2)' }}>{safeStart} kg</div>
+          </div>
+          <div style={{ textAlign: 'center' }}>
+            <div style={{ fontSize: 11, color: 'var(--text3)', fontWeight: 600, marginBottom: 4, letterSpacing: '0.05em' }}>REMAINING</div>
+            <div style={{ fontSize: 18, fontWeight: 700, color: 'var(--text)' }}>{Math.abs(safeWeight - safeGoal).toFixed(1)} kg</div>
+          </div>
+          <div style={{ textAlign: 'center' }}>
+            <div style={{ fontSize: 11, color: 'var(--green)', fontWeight: 600, marginBottom: 4, letterSpacing: '0.05em' }}>GOAL</div>
+            <div style={{ fontSize: 18, fontWeight: 700, color: 'var(--text)' }}>{safeGoal} kg</div>
+          </div>
         </div>
-        <ProgressBar value={goalPct} max={100} color="var(--green)" />
-        <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 6, fontSize: 11, color: 'var(--text3)' }}>
-          <span>Start: {safeStart} kg</span>
-          <span>Now: {safeWeight} kg</span>
-          <span>Goal: {safeGoal} kg</span>
-        </div>
-      </Card>
+      </MotionCard>
 
       {/* Today's snapshot & Water Dashboard */}
       <SectionTitle style={{ marginTop: 24 }}>
@@ -652,9 +657,9 @@ export default function Dashboard({ logs, workouts, runs, profile }) {
         </span>
       </SectionTitle>
 
-      <Grid cols={2} gap={10} style={{ marginTop: 8 }}>
-        <MotionCard delay={0.2} onClick={() => setSelectedAnalysis('macros')} className="clickable-card" style={{ height: '100%', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
-          <div className="snapshot-grid">
+      <Grid cols={2} gap={16} style={{ marginTop: 16 }}>
+        <MotionCard delay={0.2} onClick={() => setSelectedAnalysis('macros')} className="clickable-card" style={{ height: '100%', display: 'flex', flexDirection: 'column', justifyContent: 'center', padding: 16 }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 12, textAlign: 'center' }}>
             {[
               { label: 'Calories', value: todayLog.calories || 0, unit: 'kcal', color: 'var(--green)', target: profile.dailyCalorieTarget },
               { label: 'Protein', value: todayLog.protein || 0, unit: 'g', color: 'var(--blue)', target: profile.dailyProteinTarget },
@@ -675,54 +680,96 @@ export default function Dashboard({ logs, workouts, runs, profile }) {
           </div>
         </MotionCard>
 
-        <MotionCard delay={0.25} onClick={() => setSelectedAnalysis('water')} className="clickable-card" style={{ background: 'linear-gradient(145deg, var(--bg2) 0%, rgba(56, 189, 248, 0.05) 100%)', border: '1px solid rgba(56, 189, 248, 0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 20 }}>
-          <div style={{ 
-            width: 50, height: 76, borderRadius: '6px 6px 14px 14px', 
-            border: '3px solid rgba(56, 189, 248, 0.3)', 
-            position: 'relative', overflow: 'hidden', padding: 2,
-            background: 'rgba(56, 189, 248, 0.05)'
-          }}>
-            <div style={{
-              position: 'absolute', bottom: 2, left: 2, right: 2, top: `${100 - waterPct}%`,
-              background: 'linear-gradient(180deg, #38bdf8 0%, #0284c7 100%)',
-              borderRadius: waterPct > 95 ? '4px 4px 10px 10px' : '0 0 10px 10px', 
-              transition: 'top 1s ease-out'
-            }} />
+        <MotionCard delay={0.25} className="glass-card" style={{ background: 'linear-gradient(145deg, var(--bg2) 0%, rgba(56, 189, 248, 0.05) 100%)', border: '1px solid rgba(56, 189, 248, 0.2)', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', padding: 16 }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }} onClick={() => setSelectedAnalysis('water')} className="clickable-card">
+            <div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 4 }}>
+                <Droplets size={16} color="var(--blue)" />
+                <div style={{ fontSize: 11, color: 'var(--text3)', fontWeight: 600, letterSpacing: '0.05em' }}>HYDRATION</div>
+              </div>
+              <div style={{ fontSize: 26, fontWeight: 800, color: 'var(--text)', lineHeight: 1.1 }}>
+                {(waterIntake / 1000).toFixed(1)}<span style={{ fontSize: 14, color: 'var(--text3)', fontWeight: 500 }}>L</span>
+              </div>
+              <div style={{ fontSize: 11, color: 'var(--text2)', marginTop: 4 }}>
+                {waterPct.toFixed(0)}% of {(waterGoal / 1000).toFixed(1)}L
+              </div>
+            </div>
+
+            <div style={{ 
+              width: 50, height: 76, borderRadius: '8px 8px 16px 16px', 
+              border: '2px solid rgba(56, 189, 248, 0.3)', 
+              position: 'relative', overflow: 'hidden',
+              background: 'rgba(56, 189, 248, 0.05)',
+              boxShadow: 'inset 0 0 10px rgba(0,0,0,0.5)',
+            }}>
+              <div style={{
+                position: 'absolute', bottom: 0, left: 0, right: 0, top: `${100 - waterPct}%`,
+                background: 'linear-gradient(180deg, rgba(14, 165, 233, 0.8) 0%, rgba(56, 189, 248, 0.9) 100%)',
+                boxShadow: '0 -4px 12px rgba(56, 189, 248, 0.4)',
+                transition: 'top 1s cubic-bezier(0.34, 1.56, 0.64, 1)'
+              }}>
+                <div style={{ position: 'absolute', top: -4, left: 0, right: 0, height: 4, background: 'rgba(255,255,255,0.3)', borderRadius: '50%' }} />
+              </div>
+            </div>
           </div>
-          <div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 4 }}>
-              <Droplets size={16} color="#38bdf8" />
-              <div style={{ fontSize: 12, color: 'var(--text3)', fontWeight: 600, letterSpacing: 0.5 }}>HYDRATION</div>
-            </div>
-            <div style={{ fontSize: 24, fontWeight: 800, color: 'var(--text)', lineHeight: 1.1 }}>
-              {(waterIntake / 1000).toFixed(1)}<span style={{ fontSize: 14, color: 'var(--text3)', fontWeight: 500 }}>L</span>
-            </div>
-            <div style={{ fontSize: 11, color: 'var(--text2)', marginTop: 4 }}>
-              {waterPct.toFixed(0)}% of {(waterGoal / 1000).toFixed(1)}L goal
-            </div>
+
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginTop: 16 }}>
+             <button onClick={() => handleAddWater(250)} style={{ background: 'var(--bg3)', border: '1px solid var(--border)', borderRadius: 8, padding: '8px 0', fontSize: 12, fontWeight: 600, color: 'var(--text2)', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 4, transition: 'all 0.2s ease' }} onMouseOver={e => e.currentTarget.style.borderColor = 'var(--blue)'} onMouseOut={e => e.currentTarget.style.borderColor = 'var(--border)'}>
+               +250ml
+             </button>
+             <button onClick={() => handleAddWater(500)} style={{ background: 'var(--bg3)', border: '1px solid var(--border)', borderRadius: 8, padding: '8px 0', fontSize: 12, fontWeight: 600, color: 'var(--text2)', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 4, transition: 'all 0.2s ease' }} onMouseOver={e => e.currentTarget.style.borderColor = 'var(--blue)'} onMouseOut={e => e.currentTarget.style.borderColor = 'var(--border)'}>
+               +500ml
+             </button>
           </div>
         </MotionCard>
       </Grid>
 
-      {/* Weekly stats */}
-      <Grid cols={2} gap={10} style={{ marginTop: 20 }}>
-        <MotionCard delay={0.25} onClick={() => setSelectedAnalysis('calories')}>
-          <div style={{ fontSize: 11, color: 'var(--text3)', marginBottom: 2 }}>Weekly avg calories</div>
-          <div style={{ fontSize: 20, fontWeight: 700 }}>{weeklyCalAvg || '—'}</div>
-        </MotionCard>
-        <MotionCard delay={0.3} onClick={() => setSelectedAnalysis('protein')}>
-          <div style={{ fontSize: 11, color: 'var(--text3)', marginBottom: 2 }}>Weekly avg protein</div>
-          <div style={{ fontSize: 20, fontWeight: 700, color: 'var(--blue)' }}>{weeklyProtAvg || '—'}g</div>
-        </MotionCard>
-        <MotionCard delay={0.35} onClick={() => setSelectedAnalysis('running')}>
-          <div style={{ fontSize: 11, color: 'var(--text3)', marginBottom: 2 }}>Total km run</div>
-          <div style={{ fontSize: 20, fontWeight: 700, color: 'var(--green)' }}>{totalRunKm.toFixed(1)}</div>
-        </MotionCard>
-        <MotionCard delay={0.4} onClick={() => setSelectedAnalysis('workouts')}>
-          <div style={{ fontSize: 11, color: 'var(--text3)', marginBottom: 2 }}>Workouts logged</div>
-          <div style={{ fontSize: 20, fontWeight: 700, color: 'var(--orange)' }}>{workouts.length}</div>
-        </MotionCard>
-      </Grid>
+      {/* Unified Activity Summary */}
+      <SectionTitle style={{ marginTop: 24 }}>
+        <span style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 14, fontWeight: 600, color: 'var(--text)' }}>
+          <Activity size={16} color="var(--accent)" /> Activity Summary
+        </span>
+      </SectionTitle>
+
+      <MotionCard delay={0.3} style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+           <div onClick={() => setSelectedAnalysis('calories')} className="clickable-card" style={{ padding: 12, background: 'var(--bg3)', borderRadius: 12 }}>
+             <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 8, color: 'var(--orange)' }}>
+               <Flame size={14} /> <span style={{ fontSize: 11, fontWeight: 600, letterSpacing: '0.05em' }}>AVG CALS</span>
+             </div>
+             <div style={{ fontSize: 24, fontWeight: 800 }}>{weeklyCalAvg ? weeklyCalAvg.toLocaleString() : '—'}<span style={{ fontSize: 12, color: 'var(--text3)', fontWeight: 500, marginLeft: 4 }}>kcal</span></div>
+           </div>
+
+           <div onClick={() => setSelectedAnalysis('protein')} className="clickable-card" style={{ padding: 12, background: 'var(--bg3)', borderRadius: 12 }}>
+             <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 8, color: 'var(--blue)' }}>
+               <Target size={14} /> <span style={{ fontSize: 11, fontWeight: 600, letterSpacing: '0.05em' }}>AVG PROTEIN</span>
+             </div>
+             <div style={{ fontSize: 24, fontWeight: 800 }}>{weeklyProtAvg || '—'}<span style={{ fontSize: 12, color: 'var(--text3)', fontWeight: 500, marginLeft: 4 }}>g</span></div>
+           </div>
+        </div>
+
+        <div style={{ borderTop: '1px solid var(--border)', paddingTop: 16, display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+           <div onClick={() => setSelectedAnalysis('running')} className="clickable-card" style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+             <div style={{ width: 40, height: 40, borderRadius: 10, background: 'var(--green)22', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--green)' }}>
+               <Activity size={20} />
+             </div>
+             <div>
+               <div style={{ fontSize: 11, color: 'var(--text3)', fontWeight: 600, letterSpacing: '0.05em' }}>DISTANCE</div>
+               <div style={{ fontSize: 18, fontWeight: 700 }}>{totalRunKm.toFixed(1)} <span style={{ fontSize: 12, color: 'var(--text3)', fontWeight: 500 }}>km</span></div>
+             </div>
+           </div>
+
+           <div onClick={() => setSelectedAnalysis('workouts')} className="clickable-card" style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+             <div style={{ width: 40, height: 40, borderRadius: 10, background: 'var(--accent)22', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--accent)' }}>
+               <Dumbbell size={20} />
+             </div>
+             <div>
+               <div style={{ fontSize: 11, color: 'var(--text3)', fontWeight: 600, letterSpacing: '0.05em' }}>WORKOUTS</div>
+               <div style={{ fontSize: 18, fontWeight: 700 }}>{workouts.length} <span style={{ fontSize: 12, color: 'var(--text3)', fontWeight: 500 }}>logs</span></div>
+             </div>
+           </div>
+        </div>
+      </MotionCard>
 
       {/* Charts */}
       <div style={{ marginTop: 20 }} onClick={() => setSelectedAnalysis('weight')} className="clickable-section">
@@ -792,33 +839,22 @@ export default function Dashboard({ logs, workouts, runs, profile }) {
       <style>{`
         .snapshot-grid {
           display: grid;
-          grid-template-columns: repeat(4, 1fr);
-          gap: 10px;
-          text-align: center;
+          grid-template-columns: repeat(2, 1fr);
+          gap: 16px;
         }
         .clickable-section {
           cursor: pointer;
+          transition: transform var(--transition);
+        }
+        .clickable-section:active {
+          transform: scale(0.98);
         }
         .hover-card {
-          transition: transform 0.2s ease, border-color 0.2s ease;
+          transition: border-color var(--transition), box-shadow var(--transition);
         }
         .clickable-section:hover .hover-card {
-           transform: scale(0.99);
-           border-color: var(--accent);
-        }
-        .clickable-card {
-          cursor: pointer;
-          transition: transform 0.2s ease, border-color 0.2s ease;
-        }
-        .clickable-card:hover {
-          transform: scale(0.99);
-          border-color: var(--accent);
-        }
-        @media (max-width: 768px) {
-          .snapshot-grid {
-            grid-template-columns: repeat(2, 1fr);
-            gap: 16px 10px;
-          }
+           border-color: rgba(255,255,255,0.15);
+           box-shadow: var(--shadow);
         }
       `}</style>
     </div>

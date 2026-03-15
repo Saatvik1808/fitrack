@@ -34,7 +34,7 @@ async function fetchApiData(collectionName) {
   if (res.ok) {
     return await res.json();
   }
-  return null;
+  throw new Error(`API returned ${res.status}`);
 }
 
 const dbTimeouts = {}
@@ -85,18 +85,23 @@ export function useProfile(userId, userEmail) {
     }
 
     setLoadingProfile(true)
-    fetchApiData('PROFILE').then(data => {
-      if (data) {
-        setProfileState(data)
-        profileRef.current = data
-      } else {
-        const initial = getDefaultProfile()
-        setProfileState(initial)
-        profileRef.current = initial
-        saveToApi('PROFILE', initial)
-      }
-      setLoadingProfile(false)
-    })
+    fetchApiData('PROFILE')
+      .then(data => {
+        if (data) {
+          setProfileState(data)
+          profileRef.current = data
+        } else {
+          const initial = getDefaultProfile()
+          setProfileState(initial)
+          profileRef.current = initial
+          saveToApi('PROFILE', initial)
+        }
+        setLoadingProfile(false)
+      })
+      .catch(err => {
+        console.error("Profile fetch error:", err);
+        setLoadingProfile(false);
+      })
   }, [userId])
 
   const setProfile = useCallback(async (updater, options = { immediate: false }) => {
@@ -128,12 +133,14 @@ export function useDailyLogs(userId) {
     setIsMounted(true)
     if (!userId) return
 
-    fetchApiData('LOGS').then(data => {
-      if (data) {
-        setLogsState(data)
-        logsRef.current = data
-      }
-    })
+    fetchApiData('LOGS')
+      .then(data => {
+        if (data) {
+          setLogsState(data)
+          logsRef.current = data
+        }
+      })
+      .catch(err => console.error("Logs fetch error:", err))
   }, [userId])
 
   const setLog = useCallback((date, updater) => {
@@ -164,12 +171,14 @@ export function useWorkouts(userId) {
     setIsMounted(true)
     if (!userId) return
 
-    fetchApiData('WORKOUTS').then(data => {
-      if (data) {
-        setWorkoutsState(data)
-        workoutsRef.current = data
-      }
-    })
+    fetchApiData('WORKOUTS')
+      .then(data => {
+        if (data) {
+          setWorkoutsState(data)
+          workoutsRef.current = data
+        }
+      })
+      .catch(err => console.error("Workouts fetch error:", err))
   }, [userId])
 
   const addWorkout = useCallback((workout) => {
@@ -202,12 +211,14 @@ export function useRuns(userId) {
     setIsMounted(true)
     if (!userId) return
 
-    fetchApiData('RUNS').then(data => {
-      if (data) {
-        setRunsState(data)
-        runsRef.current = data
-      }
-    })
+    fetchApiData('RUNS')
+      .then(data => {
+        if (data) {
+          setRunsState(data)
+          runsRef.current = data
+        }
+      })
+      .catch(err => console.error("Runs fetch error:", err))
   }, [userId])
 
   const addRun = useCallback((run) => {
@@ -240,17 +251,19 @@ export function useSettings(userId) {
     setIsMounted(true)
     if (!userId) return
 
-    fetchApiData('SETTINGS').then(data => {
-      if (data) {
-        setSettingsState(data)
-        settingsRef.current = data
-      } else {
-        const initial = { theme: 'dark' }
-        setSettingsState(initial)
-        settingsRef.current = initial
-        saveToApi('SETTINGS', initial)
-      }
-    })
+    fetchApiData('SETTINGS')
+      .then(data => {
+        if (data) {
+          setSettingsState(data)
+          settingsRef.current = data
+        } else {
+          const initial = { theme: 'dark' }
+          setSettingsState(initial)
+          settingsRef.current = initial
+          saveToApi('SETTINGS', initial)
+        }
+      })
+      .catch(err => console.error("Settings fetch error:", err));
   }, [userId])
 
   const setSettings = useCallback((updater) => {
