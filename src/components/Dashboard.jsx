@@ -5,7 +5,7 @@ import {
   BarElement, Title, Tooltip, Legend, Filler, ArcElement,
 } from 'chart.js'
 import { Line, Bar, Doughnut } from 'react-chartjs-2'
-import { Target, Flame, Dumbbell, Activity, Zap, Trophy, Moon, Info, Calendar } from 'lucide-react'
+import { Target, Flame, Dumbbell, Activity, Zap, Trophy, Moon, Info, Calendar, Droplets } from 'lucide-react'
 import { Card, StatCard, SectionTitle, ProgressBar, Badge, Grid, MotionCard, Modal } from './UI.jsx'
 import {
   calcBMI, bmiCategory, calcGoalProgress, getWeekDates, getLast30Days,
@@ -64,6 +64,17 @@ export default function Dashboard({ logs, workouts, runs, profile }) {
   const goalPct = safeGoal ? calcGoalProgress(safeWeight, safeStart, safeGoal) : 0
   const streak = getStreakDays(logs)
 
+  // Hydration parsing
+  const parseWaterAmount = (val) => {
+    if (!val) return 0;
+    const n = Number(val);
+    if (n < 20) return n * 1000;
+    return n;
+  };
+  const waterIntake = parseWaterAmount(todayLog.water);
+  const waterGoal = parseWaterAmount(todayLog.waterGoal) || 3000;
+  const waterPct = Math.min((waterIntake / waterGoal) * 100, 100) || 0;
+
   // Weight trend data
   const weightData = useMemo(() => {
     const vals = last30.map(d => logs[d]?.weight || null)
@@ -118,6 +129,17 @@ export default function Dashboard({ logs, workouts, runs, profile }) {
       data: last30.map(d => Number(logs[d]?.protein) || 0),
       backgroundColor: '#3b82f644',
       hoverBackgroundColor: '#3b82f6',
+      borderRadius: 4,
+    }]
+  }), [logs, last30])
+
+  // **NEW**: 30-day water data (for modal)
+  const waterData30 = useMemo(() => ({
+    labels: last30.map(d => formatDate(d)),
+    datasets: [{
+      data: last30.map(d => parseWaterAmount(logs[d]?.water) / 1000),
+      backgroundColor: '#38bdf844',
+      hoverBackgroundColor: '#38bdf8',
       borderRadius: 4,
     }]
   }), [logs, last30])
@@ -206,7 +228,8 @@ export default function Dashboard({ logs, workouts, runs, profile }) {
       running: 'Running Performance',
       workouts: 'Workout Volume Analysis',
       macros: 'Today\'s Macro Breakdown',
-      sleep: 'Sleep Quality & Recovery'
+      sleep: 'Sleep Quality & Recovery',
+      water: 'Hydration Trends'
     };
 
     const title = TitleMap[selectedAnalysis];
@@ -273,6 +296,27 @@ export default function Dashboard({ logs, workouts, runs, profile }) {
              <div style={{ height: 200 }}>
                 <Bar data={sleepData} options={chartDefaults} />
              </div>
+          </div>
+        )}
+
+        {selectedAnalysis === 'water' && (
+          <div>
+            <p style={{ color: 'var(--text3)', fontSize: 13, marginBottom: 16 }}>Expanded 30-day view of your hydration. Consistent water intake is key to recovery and digestion.</p>
+            <div style={{ height: 250 }}>
+              <Bar data={waterData30} options={chartDefaults} />
+            </div>
+            <div style={{ marginTop: 20, display: 'flex', justifyContent: 'space-between', background: 'var(--bg2)', padding: 16, borderRadius: 12 }}>
+              <div>
+                <div style={{ fontSize: 11, color: 'var(--text3)' }}>DAILY TARGET</div>
+                <div style={{ fontSize: 20, fontWeight: 700 }}>{(waterGoal / 1000).toFixed(1)} L</div>
+              </div>
+              <div style={{ textAlign: 'right' }}>
+                <div style={{ fontSize: 11, color: 'var(--text3)' }}>30-DAY AVERAGE</div>
+                <div style={{ fontSize: 20, fontWeight: 700, color: '#38bdf8' }}>
+                  {(last30.reduce((s, d) => s + parseWaterAmount(logs[d]?.water), 0) / 30 / 1000).toFixed(1)} L
+                </div>
+              </div>
+            </div>
           </div>
         )}
 
@@ -601,33 +645,64 @@ export default function Dashboard({ logs, workouts, runs, profile }) {
         </div>
       </Card>
 
-      {/* Today's snapshot */}
+      {/* Today's snapshot & Water Dashboard */}
       <SectionTitle style={{ marginTop: 24 }}>
         <span style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 14, fontWeight: 600, color: 'var(--text)', marginTop: 20 }}>
-          <Flame size={16} color="var(--orange)" /> Today's snapshot
+          <Flame size={16} color="var(--orange)" /> Daily Overview
         </span>
       </SectionTitle>
-      <MotionCard style={{ marginTop: 8 }} delay={0.2} onClick={() => setSelectedAnalysis('macros')}>
-        <div className="snapshot-grid">
-          {[
-            { label: 'Calories', value: todayLog.calories || 0, unit: 'kcal', color: 'var(--green)', target: profile.dailyCalorieTarget },
-            { label: 'Protein', value: todayLog.protein || 0, unit: 'g', color: 'var(--blue)', target: profile.dailyProteinTarget },
-            { label: 'Water', value: todayLog.water || 0, unit: 'L', color: 'var(--accent)', target: 3.5 },
-            { label: 'Sleep', value: todayLog.sleep || 0, unit: 'hr', color: 'var(--pink)', target: 8 },
-          ].map(item => (
-            <div key={item.label}>
-              <div style={{ fontSize: 11, color: 'var(--text3)', marginBottom: 4 }}>{item.label}</div>
-              <div style={{ fontSize: 18, fontWeight: 700, color: item.value >= item.target ? item.color : 'var(--text)' }}>
-                {item.value}
+
+      <Grid cols={2} gap={10} style={{ marginTop: 8 }}>
+        <MotionCard delay={0.2} onClick={() => setSelectedAnalysis('macros')} className="clickable-card" style={{ height: '100%', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+          <div className="snapshot-grid">
+            {[
+              { label: 'Calories', value: todayLog.calories || 0, unit: 'kcal', color: 'var(--green)', target: profile.dailyCalorieTarget },
+              { label: 'Protein', value: todayLog.protein || 0, unit: 'g', color: 'var(--blue)', target: profile.dailyProteinTarget },
+              { label: 'Carbs', value: todayLog.carbs || 0, unit: 'g', color: 'var(--orange)', target: 200 }, // Carbs target placeholder
+              { label: 'Sleep', value: todayLog.sleep || 0, unit: 'hr', color: 'var(--pink)', target: 8 },
+            ].map(item => (
+              <div key={item.label}>
+                <div style={{ fontSize: 11, color: 'var(--text3)', marginBottom: 4 }}>{item.label}</div>
+                <div style={{ fontSize: 18, fontWeight: 700, color: item.value >= item.target ? item.color : 'var(--text)' }}>
+                  {item.value}
+                </div>
+                <div style={{ fontSize: 10, color: 'var(--text3)' }}>{item.unit}</div>
+                <div style={{ height: 2, background: 'var(--bg4)', borderRadius: 100, marginTop: 4, overflow: 'hidden' }}>
+                  <div style={{ height: '100%', width: Math.min(100, (item.value / item.target) * 100) + '%', background: item.color, borderRadius: 100 }} />
+                </div>
               </div>
-              <div style={{ fontSize: 10, color: 'var(--text3)' }}>{item.unit}</div>
-              <div style={{ height: 2, background: 'var(--bg4)', borderRadius: 100, marginTop: 4, overflow: 'hidden' }}>
-                <div style={{ height: '100%', width: Math.min(100, (item.value / item.target) * 100) + '%', background: item.color, borderRadius: 100 }} />
-              </div>
+            ))}
+          </div>
+        </MotionCard>
+
+        <MotionCard delay={0.25} onClick={() => setSelectedAnalysis('water')} className="clickable-card" style={{ background: 'linear-gradient(145deg, var(--bg2) 0%, rgba(56, 189, 248, 0.05) 100%)', border: '1px solid rgba(56, 189, 248, 0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 20 }}>
+          <div style={{ 
+            width: 50, height: 76, borderRadius: '6px 6px 14px 14px', 
+            border: '3px solid rgba(56, 189, 248, 0.3)', 
+            position: 'relative', overflow: 'hidden', padding: 2,
+            background: 'rgba(56, 189, 248, 0.05)'
+          }}>
+            <div style={{
+              position: 'absolute', bottom: 2, left: 2, right: 2, top: `${100 - waterPct}%`,
+              background: 'linear-gradient(180deg, #38bdf8 0%, #0284c7 100%)',
+              borderRadius: waterPct > 95 ? '4px 4px 10px 10px' : '0 0 10px 10px', 
+              transition: 'top 1s ease-out'
+            }} />
+          </div>
+          <div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 4 }}>
+              <Droplets size={16} color="#38bdf8" />
+              <div style={{ fontSize: 12, color: 'var(--text3)', fontWeight: 600, letterSpacing: 0.5 }}>HYDRATION</div>
             </div>
-          ))}
-        </div>
-      </MotionCard>
+            <div style={{ fontSize: 24, fontWeight: 800, color: 'var(--text)', lineHeight: 1.1 }}>
+              {(waterIntake / 1000).toFixed(1)}<span style={{ fontSize: 14, color: 'var(--text3)', fontWeight: 500 }}>L</span>
+            </div>
+            <div style={{ fontSize: 11, color: 'var(--text2)', marginTop: 4 }}>
+              {waterPct.toFixed(0)}% of {(waterGoal / 1000).toFixed(1)}L goal
+            </div>
+          </div>
+        </MotionCard>
+      </Grid>
 
       {/* Weekly stats */}
       <Grid cols={2} gap={10} style={{ marginTop: 20 }}>
