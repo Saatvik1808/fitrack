@@ -21,6 +21,66 @@ function getDefaultProfile() {
   }
 }
 
+const LEGACY_BASE_KEYS = {
+  LOGS: 'fittrack_logs',
+  WORKOUTS: 'fittrack_workouts',
+  RUNS: 'fittrack_runs',
+  PROFILE: 'fittrack_profile',
+}
+
+function getLegacyUserKeys(userId) {
+  return {
+    LOGS: `fittrack_${userId}_logs`,
+    WORKOUTS: `fittrack_${userId}_workouts`,
+    RUNS: `fittrack_${userId}_runs`,
+    PROFILE: `fittrack_${userId}_profile`,
+  }
+}
+
+async function migrateLocalStorageToFirestore(userId) {
+  if (!userId || !db) return
+  const migrationFlag = `fittrack_migrated_${userId}`
+  if (localStorage.getItem(migrationFlag)) return
+
+  console.log("Starting one-time migration to Firestore...")
+  const legacyUserKeys = getLegacyUserKeys(userId)
+  const collections = ['PROFILE', 'LOGS', 'WORKOUTS', 'RUNS']
+
+  for (const coll of collections) {
+    const unscopedKey = LEGACY_BASE_KEYS[coll]
+    const scopedKey = legacyUserKeys[coll]
+    
+    const localRaw = localStorage.getItem(scopedKey) || localStorage.getItem(unscopedKey)
+    if (!localRaw) continue
+
+    try {
+      const localData = JSON.parse(localRaw)
+      const docRef = doc(db, 'users', userId, 'data', coll)
+      const snap = await getDoc(docRef)
+      let remoteData = snap.exists() ? snap.data().data : null
+
+      let merged = localData
+      if (remoteData) {
+        if (Array.isArray(localData) && Array.isArray(remoteData)) {
+          // Merge arrays (Workouts, Runs) by ID or just unique
+          const seen = new Set(remoteData.map(i => i.id))
+          merged = [...remoteData, ...localData.filter(i => !seen.has(i.id))]
+        } else if (typeof localData === 'object' && localData !== null) {
+          // Shallow merge objects (Profile, Logs)
+          merged = { ...localData, ...remoteData }
+        }
+      }
+
+      await setDoc(docRef, { data: merged }, { merge: true })
+      console.log(`Migrated ${coll} to Firestore.`)
+    } catch (e) {
+      console.error(`Migration error for ${coll}:`, e)
+    }
+  }
+
+  localStorage.setItem(migrationFlag, 'true')
+}
+
 // Background save helper (no local storage)
 const dbTimeouts = {}
 function saveToDb(userId, collectionName, value) {
@@ -57,6 +117,13 @@ export function useProfile(userId, userEmail) {
     })
 
     return () => unsubscribe()
+  }, [userId])
+
+  // One-time migration trigger
+  useEffect(() => {
+    if (userId) {
+      migrateLocalStorageToFirestore(userId)
+    }
   }, [userId])
 
   const setProfile = useCallback((updater) => {
