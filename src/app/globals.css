@@ -56,6 +56,11 @@
   transform: scale(0.98);
 }
 
+@media (max-width: 768px) {
+  .dashboard-grid {
+    grid-template-columns: 1fr !important;
+  }
+}
 
 /* Light theme overrides - Apple Health Style */
 .theme-light {

@@ -684,7 +684,7 @@ export default function Dashboard({ logs, setLog, workouts, runs, profile }) {
         </span>
       </SectionTitle>
 
-      <Grid cols={2} gap={16} style={{ marginTop: 12 }}>
+      <Grid cols={2} gap={16} style={{ marginTop: 12 }} className="dashboard-grid">
         <MotionCard delay={0.2} onClick={() => setSelectedAnalysis('macros')} className="glass-card clickable-card" style={{ height: '100%', display: 'flex', flexDirection: 'column', justifyContent: 'center', padding: '20px 16px' }}>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 16, textAlign: 'center' }}>
             {[

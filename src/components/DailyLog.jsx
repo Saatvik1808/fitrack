@@ -188,7 +188,7 @@ export default function DailyLog({ logs, setLog, today, profile }) {
   }
 
   return (
-    <div className="fade-in" style={{ paddingBottom: '90px' }}>
+    <div className="fade-in" style={{ paddingBottom: '160px' }}>
       {/* Date Navigation */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 20 }}>
         <div style={{ 
